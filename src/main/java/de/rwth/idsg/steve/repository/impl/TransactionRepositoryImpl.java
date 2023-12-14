@@ -89,6 +89,19 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     @Override
+    public Integer getActiveTransactionId(String chargeBoxId, Integer connectorId) {
+        return ctx.select(TRANSACTION.TRANSACTION_PK)
+                .from(TRANSACTION)
+                .join(CONNECTOR)
+                    .on(TRANSACTION.CONNECTOR_PK.equal(CONNECTOR.CONNECTOR_PK))
+                    .and(CONNECTOR.CHARGE_BOX_ID.equal(chargeBoxId))
+                .where(TRANSACTION.STOP_TIMESTAMP.isNull())
+                    .and(CONNECTOR.CONNECTOR_ID.equal(connectorId))
+                .orderBy(TRANSACTION.TRANSACTION_PK.desc())
+                .fetchAny(TRANSACTION.TRANSACTION_PK);
+    }
+
+    @Override
     public TransactionDetails getDetails(int transactionPk, boolean firstArrivingMeterValueIfMultiple) {
 
         // -------------------------------------------------------------------------

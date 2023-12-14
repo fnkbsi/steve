@@ -35,6 +35,7 @@ public interface TransactionRepository {
     void writeTransactionsCSV(TransactionQueryForm form, Writer writer);
 
     List<Integer> getActiveTransactionIds(String chargeBoxId);
+    Integer getActiveTransactionId(String chargeBoxId, Integer connectorId);
 
     TransactionDetails getDetails(int transactionPk, boolean firstArrivingMeterValueIfMultiple);
 
