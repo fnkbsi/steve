@@ -66,6 +66,16 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     @Override
+    public Transaction getTransaction(int transactionPk) {
+        TransactionQueryForm form = new TransactionQueryForm();
+        form.setTransactionPk(transactionPk);
+        form.setReturnCSV(false);
+        form.setType(TransactionQueryForm.QueryType.ALL);
+        return getInternal(form).fetch()
+                                .map(new TransactionMapper()).get(0);
+    }
+
+    @Override
     public List<Transaction> getTransactions(TransactionQueryForm form) {
         return getInternal(form).fetch()
                                 .map(new TransactionMapper());
@@ -86,6 +96,16 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                     .and(CONNECTOR.CHARGE_BOX_ID.equal(chargeBoxId))
                   .where(TRANSACTION.STOP_TIMESTAMP.isNull())
                   .fetch(TRANSACTION.TRANSACTION_PK);
+    }
+
+    @Override
+    public String getOcppTagOfActiveTransaction(Integer connectorPk) {
+        return ctx.select(TRANSACTION.ID_TAG)
+                .from(TRANSACTION)
+                .where(TRANSACTION.CONNECTOR_PK.eq(connectorPk))
+                .and(TRANSACTION.STOP_VALUE.isNull())
+                .orderBy(TRANSACTION.TRANSACTION_PK.desc()) // to avoid fetching ghost transactions, fetch the latest
+                .fetchAny(TRANSACTION.ID_TAG);
     }
 
     @Override

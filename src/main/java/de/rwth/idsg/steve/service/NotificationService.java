@@ -28,6 +28,7 @@ import de.rwth.idsg.steve.service.notification.OcppStationStatusFailure;
 import de.rwth.idsg.steve.service.notification.OcppStationWebSocketConnected;
 import de.rwth.idsg.steve.service.notification.OcppStationWebSocketDisconnected;
 import de.rwth.idsg.steve.service.notification.OcppTransactionEnded;
+import de.rwth.idsg.steve.service.notification.OcppStationStatusSuspendedEV;
 import de.rwth.idsg.steve.service.notification.OcppTransactionStarted;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
@@ -40,8 +41,15 @@ import static de.rwth.idsg.steve.NotificationFeature.OcppStationStatusFailure;
 import static de.rwth.idsg.steve.NotificationFeature.OcppStationWebSocketConnected;
 import static de.rwth.idsg.steve.NotificationFeature.OcppStationWebSocketDisconnected;
 import static de.rwth.idsg.steve.NotificationFeature.OcppTransactionStarted;
+import static de.rwth.idsg.steve.NotificationFeature.OcppStationStatusSuspendedEV;
 import static de.rwth.idsg.steve.NotificationFeature.OcppTransactionEnded;
+import de.rwth.idsg.steve.repository.OcppServerRepository;
+import de.rwth.idsg.steve.repository.TransactionRepository;
+import de.rwth.idsg.steve.repository.UserRepository;
+import de.rwth.idsg.steve.repository.dto.Transaction;
 import static java.lang.String.format;
+import jooq.steve.db.tables.records.UserRecord;
+import org.springframework.scheduling.annotation.Async;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -52,6 +60,9 @@ import static java.lang.String.format;
 public class NotificationService {
 
     @Autowired private MailService mailService;
+    @Autowired private TransactionRepository transactionRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private OcppServerRepository ocppServerRepository;
 
     @EventListener
     public void ocppStationBooted(OccpStationBooted notification) {
@@ -98,7 +109,10 @@ public class NotificationService {
             return;
         }
 
-        String subject = format("Connector '%s' of charging station '%s' is FAULTED", notification.getConnectorId(), notification.getChargeBoxId());
+        String subject = format("Connector '%s' of charging station '%s' is FAULTED",
+                notification.getConnectorId(),
+                notification.getChargeBoxId()
+        );
         String body = format("Status Error Code: '%s'", notification.getErrorCode());
 
         mailService.sendAsync(subject, addTimestamp(body));
@@ -110,18 +124,102 @@ public class NotificationService {
             return;
         }
 
-        String subject = format("Transaction '%s' has started on charging station '%s' on connector '%s'", notification.getTransactionId(), notification.getParams().getChargeBoxId(), notification.getParams().getConnectorId());
+        String subject = format("Transaction '%s' has started on charging station '%s' on connector '%s'",
+                notification.getTransactionId(),
+                notification.getParams().getChargeBoxId(),
+                notification.getParams().getConnectorId()
+        );
 
         mailService.sendAsync(subject, addTimestamp(createContent(notification.getParams())));
     }
 
     @EventListener
+    @Async
+    public void ocppStationStatusSuspendedEV(OcppStationStatusSuspendedEV notification) {
+        Integer connectorPk = ocppServerRepository.getConnectorPk(notification.getChargeBoxId(),
+                notification.getConnectorId()
+        );
+        String ocppTag = transactionRepository.getOcppTagOfActiveTransaction(connectorPk);
+
+        String subject = format("EV stopped charging at charging station %s, Connector %d",
+                    notification.getChargeBoxId(),
+                    notification.getConnectorId()
+        );
+        if (ocppTag != null) {
+            String eMailAddress = null;
+            UserRecord userRecord = new UserRecord();
+            try {
+                userRecord = userRepository.getDetails(ocppTag).getUserRecord();
+                eMailAddress = userRecord.getEMail();
+            } catch (Exception e) {
+                log.error("Failed to send email (SuspendedEV). User not found! ", e);    
+            }
+            // send email if user with eMail address found
+            if (!Strings.isNullOrEmpty(eMailAddress)) {
+                String bodyUserMail =
+                        format("User: %s %s \n\n Connector %d of charging station %s notifies Suspended_EV",
+                                userRecord.getFirstName(),
+                                userRecord.getLastName(),
+                                notification.getConnectorId(),
+                                notification.getChargeBoxId()
+                        );
+
+                mailService.sendAsync(subject, addTimestamp(bodyUserMail), eMailAddress);
+            }
+        }
+
+        /* mail defined in settings */
+        if (isDisabled(OcppStationStatusSuspendedEV)) {
+            return;
+        }
+        String body = format("Connector %d of charging station %s notifies Suspended_EV",
+                notification.getConnectorId(),
+                notification.getChargeBoxId()
+        );
+        mailService.sendAsync(subject, addTimestamp(body));
+    }
+
+    @EventListener
+    @Async
     public void ocppTransactionEnded(OcppTransactionEnded notification) {
-       if (isDisabled(OcppTransactionEnded)) {
+        String eMailAddress = null;
+        UserRecord userRecord = new UserRecord();
+            
+        Transaction transActParams = transactionRepository.getTransaction(notification.getParams().getTransactionId());
+
+        transActParams.getOcppTagPk();
+        try {
+            userRecord = userRepository.getDetails(transActParams.getOcppIdTag()).getUserRecord();
+            eMailAddress = userRecord.getEMail();
+        } catch (Exception e) {
+            log.error("Failed to send email (TransactionStop). User not found! ", e);    
+        }
+
+        // mail to user
+        if (!Strings.isNullOrEmpty(eMailAddress)) {
+            String subjectUserMail = format("Transaction '%s' has ended on charging station '%s'",
+                    transActParams.getId(),
+                    transActParams.getChargeBoxId()
+            );
+
+            // if the Transactionstop is received within the first Minute don't send an E-Mail
+            if (transActParams.getStopTimestamp().isAfter(transActParams.getStartTimestamp().plusMinutes(1))) {
+                mailService.sendAsync(subjectUserMail,
+                        addTimestamp(createContent(transActParams, userRecord)),
+                        eMailAddress
+                );
+            }
+        }
+
+        /* mail defined in settings */
+        if (isDisabled(OcppTransactionEnded)) {
             return;
         }
 
-        String subject = format("Transaction '%s' has ended on charging station '%s'", notification.getParams().getTransactionId(), notification.getParams().getChargeBoxId());
+        String subject = format("Transaction '%s' has ended on charging station '%s'",
+                notification.getParams().getTransactionId(),
+                notification.getParams().getChargeBoxId()
+        );
 
         mailService.sendAsync(subject, addTimestamp(createContent(notification.getParams())));
     }
@@ -129,7 +227,6 @@ public class NotificationService {
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
-
 
     private static String createContent(InsertTransactionParams params) {
         StringBuilder sb = new StringBuilder("Details:").append(System.lineSeparator())
@@ -156,6 +253,36 @@ public class NotificationService {
             .toString();
     }
 
+    private static String createContent(Transaction params, UserRecord userRecord) {
+        Double meterValueDiff;
+        Integer meterValueStop;
+        Integer meterValueStart;
+        String strMeterValueDiff = "-";
+        try {
+            meterValueStop = Integer.valueOf(params.getStopValue());
+            meterValueStart = Integer.valueOf(params.getStartValue());
+            meterValueDiff = (meterValueStop - meterValueStart) / 1000.0; // --> kWh
+            strMeterValueDiff = meterValueDiff.toString() + " kWh";
+        } catch (NumberFormatException e) {
+            log.error("Failed to calculate charged energy! ", e);
+        }
+
+        return new StringBuilder("User: ")
+            .append(userRecord.getFirstName()).append(" ").append(userRecord.getLastName())
+            .append(System.lineSeparator())
+            .append(System.lineSeparator())
+            .append("Details:").append(System.lineSeparator())
+            .append("- chargeBoxId: ").append(params.getChargeBoxId()).append(System.lineSeparator())
+            .append("- connectorId: ").append(params.getConnectorId()).append(System.lineSeparator())
+            .append("- transactionId: ").append(params.getId()).append(System.lineSeparator())
+            .append("- startTimestamp (UTC): ").append(params.getStartTimestamp()).append(System.lineSeparator())
+            .append("- startMeterValue: ").append(params.getStartValue()).append(System.lineSeparator())
+            .append("- stopTimestamp (UTC): ").append(params.getStopTimestamp()).append(System.lineSeparator())
+            .append("- stopMeterValue: ").append(params.getStopValue()).append(System.lineSeparator())
+            .append("- stopReason: ").append(params.getStopReason()).append(System.lineSeparator())
+            .append("- charged energy: ").append(strMeterValueDiff).append(System.lineSeparator())
+            .toString();
+    }
 
     private boolean isDisabled(NotificationFeature f) {
         MailSettings settings = mailService.getSettings();
