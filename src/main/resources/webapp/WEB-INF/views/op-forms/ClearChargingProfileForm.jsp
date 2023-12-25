@@ -25,32 +25,32 @@
     <table class="userInput">
         <tr>
             <td>Filter Type:</td>
-            <td><form:select path="filterType">
+            <td><form:select path="filterType" title="Filter Type">
                 <form:options items="${filterType}"/>
             </form:select>
             </td>
         </tr>
         <tr>
             <td>Charging Profile ID:</td>
-            <td><form:select path="chargingProfilePk">
+            <td><form:select path="chargingProfilePk" title="Profile Id">
                 <form:options items="${profileList}" itemLabel="itemDescription" itemValue="chargingProfilePk"/>
             </form:select>
             </td>
         </tr>
         <tr>
             <td>Connector ID (integer):</td>
-            <td><form:input path="connectorId" placeholder="0 = charge point as a whole. Leave empty to not set."/></td>
+            <td><form:input path="connectorId" placeholder="0 = charge point as a whole. Leave empty to not set." title="Connector Id"/></td>
         </tr>
         <tr>
             <td>Charging Profile Purpose:</td>
             <td>
-                <form:select path="chargingProfilePurpose">
+                <form:select path="chargingProfilePurpose" title="Purpose">
                     <option value="" selected>-- Empty --</option>
                     <form:options items="${chargingProfilePurpose}"/>
                 </form:select>
             </td>
         </tr>
-        <tr><td>Stack Level (integer):</td><td><form:input path="stackLevel"/></td></tr>
+        <tr><td>Stack Level (integer):</td><td><form:input path="stackLevel" title="Stack Level"/></td></tr>
         <tr><td></td><td><div class="submit-button"><input type="submit" value="Perform"></div></td></tr>
     </table>
 </form:form>

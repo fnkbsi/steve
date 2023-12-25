@@ -25,15 +25,25 @@
     <table class="userInput">
         <tr>
             <td>Charging Profile ID:</td>
-            <td><form:select path="chargingProfilePk">
+            <td><form:select path="chargingProfilePk" title="Charging Profile Id">
                 <form:options items="${profileList}" itemLabel="itemDescription" itemValue="chargingProfilePk"/>
             </form:select>
             </td>
         </tr>
         <tr>
             <td>Connector ID (integer):</td>
-            <td><form:input path="connectorId" placeholder="0 = charge point as a whole"/></td>
+            <td><form:input path="connectorId" placeholder="0 = charge point as a whole" title="Connector Id"/></td>
         </tr>
-        <tr><td></td><td><div class="submit-button"><input type="submit" value="Perform"></div></td></tr>
+        <tr>
+            <td>Transaction ID (integer):</td>
+            <td><form:input path="transactionId" placeholder="only necessary for TxProfile" title="Transaction Id"/>
+                <a class="tooltip" href="#">
+                    <img src="${ctxPath}/static/images/info.png" style="vertical-align:middle" alt="info_image">
+                    <span>Only relevant for TxProfiles.
+                        If the field is left blank, Steve will try to add the transaction ID automatically!
+                    </span></a>
+            </td>
+        </tr>
+        <tr><td></td><td><div class="submit-button"><input type="submit" value="Perform"></div></td><td></td></tr>
     </table>
 </form:form>
