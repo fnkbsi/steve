@@ -29,6 +29,7 @@ import de.rwth.idsg.steve.ocpp.task.GetCompositeScheduleTask;
 import de.rwth.idsg.steve.ocpp.task.SetChargingProfileTask;
 import de.rwth.idsg.steve.ocpp.task.TriggerMessageTask;
 import de.rwth.idsg.steve.repository.ChargingProfileRepository;
+import de.rwth.idsg.steve.repository.TransactionRepository;
 import de.rwth.idsg.steve.repository.dto.ChargingProfile;
 import de.rwth.idsg.steve.service.dto.EnhancedSetChargingProfileParams;
 import de.rwth.idsg.steve.web.dto.ocpp.ClearChargingProfileParams;
@@ -41,6 +42,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import static java.util.Objects.isNull;
+
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
  * @since 13.03.2018
@@ -52,6 +55,7 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
 
     @Autowired private ChargePointService16_InvokerImpl invoker16;
     @Autowired private ChargingProfileRepository chargingProfileRepository;
+    @Autowired private TransactionRepository transactionRepository;
 
     @Override
     protected OcppVersion getVersion() {
@@ -124,7 +128,7 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
     /**
      * Do some additional checks defined by OCPP spec, which cannot be captured with javax.validation
      */
-    private static void checkAdditionalConstraints(SetChargingProfileParams params, ChargingProfile.Details details) {
+    private void checkAdditionalConstraints(SetChargingProfileParams params, ChargingProfile.Details details) {
         ChargingProfilePurposeType purpose = ChargingProfilePurposeType.fromValue(details.getProfile().getChargingProfilePurpose());
 
         if (ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE == purpose
@@ -134,10 +138,33 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
         }
 
         if (ChargingProfilePurposeType.TX_PROFILE == purpose
-                && params.getConnectorId() != null
-                && params.getConnectorId() < 1) {
-            throw new SteveException("TxProfile should only be set at Charge Point ConnectorId > 0");
+                && ((params.getConnectorId() != null && params.getConnectorId() < 1)
+                    || params.getChargePointSelectList().size() != 1)) {
+            throw new SteveException("TxProfile should only be set at Charge Point ConnectorId > 0 on one charge box");
         }
 
+        if (ChargingProfilePurposeType.TX_PROFILE == purpose
+                && isNull(params.getTransactionId())) {
+            // transactionId not set, get it from DB
+            params.setTransactionId(getActiveTransactionID(params));
+            // still null (no active transation on this connector) throw exception
+            if (isNull(params.getTransactionId())){
+                throw new SteveException("transaction id is required for TxProfile");
+            }
+        }
+
+        if (ChargingProfilePurposeType.TX_PROFILE != purpose
+                && params.getTransactionId() != null) {
+            throw new SteveException("transaction id should only be set for TxProfile");
+        }
+    }
+
+    private Integer getActiveTransactionID(SetChargingProfileParams params) {
+
+        // get(0) Okay, because checkAdditionalConstraints throws exeption if there not exactly one ChargeBox!
+        String chargeBoxID = params.getChargePointSelectList().get(0).getChargeBoxId();
+
+        Integer connectorID = params.getConnectorId();
+        return transactionRepository.getActiveTransactionId(chargeBoxID, connectorID);
     }
 }
