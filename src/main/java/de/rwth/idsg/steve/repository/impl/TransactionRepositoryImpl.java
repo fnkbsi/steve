@@ -71,8 +71,7 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         form.setTransactionPk(transactionPk);
         form.setReturnCSV(false);
         form.setType(TransactionQueryForm.QueryType.ALL);
-        return getInternal(form).fetch()
-                                .map(new TransactionMapper()).get(0);
+        return getInternal(form).fetchAny(new TransactionMapper());
     }
 
     @Override
@@ -111,13 +110,14 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     @Override
     public Integer getActiveTransactionId(String chargeBoxId, Integer connectorId) {
         return ctx.select(TRANSACTION.TRANSACTION_PK)
-                  .from(TRANSACTION)
-                  .join(CONNECTOR)
+                .from(TRANSACTION)
+                .join(CONNECTOR)
                     .on(TRANSACTION.CONNECTOR_PK.equal(CONNECTOR.CONNECTOR_PK))
                     .and(CONNECTOR.CHARGE_BOX_ID.equal(chargeBoxId))
-                  .where(TRANSACTION.STOP_TIMESTAMP.isNull())
+                .where(TRANSACTION.STOP_TIMESTAMP.isNull())
                     .and(CONNECTOR.CONNECTOR_ID.equal(connectorId))
-                  .fetchAny(TRANSACTION.TRANSACTION_PK);
+                .orderBy(TRANSACTION.TRANSACTION_PK.desc())
+                .fetchAny(TRANSACTION.TRANSACTION_PK);
     }
 
     @Override
@@ -126,7 +126,6 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                 .from(TRANSACTION)
                 .where(TRANSACTION.TRANSACTION_PK.eq(transactionPk))
                 .fetchAny(TRANSACTION.ID_TAG);
-                /* .fetch().sortDesc(TRANSACTION.START_TIMESTAMP).getValue(0, TRANSACTION.ID_TAG); */
     }
 
     @Override
