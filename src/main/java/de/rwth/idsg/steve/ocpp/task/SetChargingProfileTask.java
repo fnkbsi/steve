@@ -76,7 +76,7 @@ public class SetChargingProfileTask extends Ocpp16AndAboveTask<EnhancedSetChargi
     public ocpp.cp._2015._10.SetChargingProfileRequest getOcpp16Request() {
         ChargingProfileRecord profile = params.getDetails().getProfile();
 
-        // if TxProfile and the StartSchedule is missing, then add the actual time as StartSchedule
+        // if it's a TxProfile which misses the StartSchedule, then add the actual time as StartSchedule
         ChargingProfilePurposeType purpose = ChargingProfilePurposeType.fromValue(profile.getChargingProfilePurpose());
         if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(profile.getStartSchedule())){
             profile.setStartSchedule(DateTime.now());

@@ -43,6 +43,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import static java.util.Objects.isNull;
+
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
  * @since 13.03.2018
@@ -138,7 +140,7 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
 
         if (ChargingProfilePurposeType.TX_PROFILE == purpose
                 && ((params.getConnectorId() != null && params.getConnectorId() < 1)
-                    || params.getChargePointSelectList().size() !=1)) {
+                    || params.getChargePointSelectList().size() != 1)) {
             throw new SteveException("TxProfile should only be set at Charge Point ConnectorId > 0 on one charge box");
         }
 

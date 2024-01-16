@@ -18,22 +18,27 @@
  */
 package de.rwth.idsg.steve.web.api.dto;
 
-import de.rwth.idsg.steve.repository.dto.TaskOverview;
+import de.rwth.idsg.steve.repository.dto.ChargingProfile;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+
 
 /**
  * @author fnkbsi
- * @since 18.10.2023
+ * @since 03.11.2023
  */
 
 @Getter
 @Setter
-//@RequiredArgsConstructor
-public class ApiTaskList {
-    @ApiModelProperty(value = "List of tasks")
-    private List<TaskOverview> tasks;
+@RequiredArgsConstructor
+public class ApiChargingProfilesInfo {
+
+    @ApiModelProperty(value = "Chargepoints")
+    ApiChargePointList chargePointList;
+
+    @ApiModelProperty(value = "Charging Profiles")
+    List<ChargingProfile.Overview> chargingProfiles;
 }

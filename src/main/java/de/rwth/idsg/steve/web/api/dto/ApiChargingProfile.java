@@ -18,42 +18,42 @@
  */
 package de.rwth.idsg.steve.web.api.dto;
 
+import de.rwth.idsg.steve.web.dto.ocpp.ClearChargingProfileFilterType;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.ArrayList;
-import java.util.List;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import ocpp.cp._2015._10.ChargingProfilePurposeType;
 
 /**
- * @author Frank Brosi
- * @since 18.10.2023
+ * @author fnkbsi
+ * @since 03.11.2023
  */
 
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class ApiChargePointList {
-    @ApiModelProperty(value = "List of charge points")
-    List<ChargePointInfo> chargePointList =  new ArrayList<>();
+public class ApiChargingProfile {
 
-    public void addCP(String chargeBoxId, List<Integer> connectorIds){
-        ChargePointInfo cp = new ChargePointInfo(chargeBoxId, connectorIds);
-        this.chargePointList.add(cp);
-    }
+    @ApiModelProperty(value = "Charge Box ID")
+    String chargeBoxId;
 
-    @Getter
-    @Setter
-    class ChargePointInfo {
-        @ApiModelProperty(value = "Charge Box ID")
-        private String chargeBoxId;
-        @ApiModelProperty(value = "List of the charge box connectors")
-        private List<Integer> connectorIds;
+    @ApiModelProperty(value = "Filter Type is required")
+    @NotNull(message = "Filter Type is required")
+    private ClearChargingProfileFilterType filterType; // = ClearChargingProfileFilterType.ChargingProfileId;
 
-        public ChargePointInfo (String chargeBoxId, List<Integer> connectorIds) {
-            this.chargeBoxId = chargeBoxId;
-            this.connectorIds = connectorIds;
-        }
-    }
+    @ApiModelProperty(value = "Profile ID")
+    Integer profilePk;
 
+    @ApiModelProperty(value = "Connector ID")
+    @Min(value = 0, message = "Connector ID must be at least {value}")
+    private Integer connectorId;
+
+    @ApiModelProperty(value = "Charging Profil Purpose")
+    private ChargingProfilePurposeType chargingProfilePurpose;
+
+    @ApiModelProperty(value = "Stack Level")
+    private Integer stackLevel;
 }
