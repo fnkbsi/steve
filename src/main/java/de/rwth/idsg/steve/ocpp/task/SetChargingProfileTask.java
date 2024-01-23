@@ -55,6 +55,15 @@ public class SetChargingProfileTask extends Ocpp16AndAboveTask<EnhancedSetChargi
         this.chargingProfileRepository = chargingProfileRepository;
     }
 
+
+    public SetChargingProfileTask(OcppVersion ocppVersion,
+                                  EnhancedSetChargingProfileParams params,
+                                  ChargingProfileRepository chargingProfileRepository,
+                                  String caller) {
+        super(ocppVersion, params, caller);
+        this.chargingProfileRepository = chargingProfileRepository;
+    }
+
     @Override
     public OcppCallback<String> defaultCallback() {
         return new DefaultOcppCallback<String>() {
