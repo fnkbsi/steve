@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
- * @author Frank Brosi
+ * @author fnkbsi
  * @since 18.10.2023
  */
 
@@ -55,5 +55,4 @@ public class ApiChargePointList {
             this.connectorIds = connectorIds;
         }
     }
-
 }
