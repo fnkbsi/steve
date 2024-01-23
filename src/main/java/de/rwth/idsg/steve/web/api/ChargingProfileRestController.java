@@ -36,12 +36,14 @@ import de.rwth.idsg.steve.web.api.dto.ApiChargePointList;
 import de.rwth.idsg.steve.web.api.dto.ApiChargingProfile;
 import de.rwth.idsg.steve.web.api.dto.ApiChargingProfileAssignments;
 import de.rwth.idsg.steve.web.api.dto.ApiChargingProfilesInfo;
+import de.rwth.idsg.steve.web.api.dto.ApiGetCompositSchedule;
 import de.rwth.idsg.steve.web.dto.ChargePointQueryForm;
 import de.rwth.idsg.steve.web.dto.ChargingProfileAssignmentQueryForm;
 import de.rwth.idsg.steve.web.dto.ChargingProfileForm;
 import de.rwth.idsg.steve.web.dto.ChargingProfileQueryForm;
 import de.rwth.idsg.steve.web.dto.ocpp.ClearChargingProfileFilterType;
 import de.rwth.idsg.steve.web.dto.ocpp.ClearChargingProfileParams;
+import de.rwth.idsg.steve.web.dto.ocpp.GetCompositeScheduleParams;
 import de.rwth.idsg.steve.web.dto.ocpp.SetChargingProfileParams;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -89,11 +91,11 @@ public class ChargingProfileRestController {
         String ocppProtocol = getOcppProtocol(chargeBoxId);
         Integer taskId;
         taskId = switch (ocppProtocol) {
-            case "OCPP1.6J", "OCPP1.6S" -> client16.setChargingProfile(setProfileParams);
+            case "OCPP1.6J", "OCPP1.6S" -> client16.setChargingProfile(setProfileParams, "SteveWebApi");
             case "OCPP1.5J", "OCPP1.5S", "OCPP1.5" -> null;
             case "OCPP1.2" -> null;
             default -> null;
-        }; //, "SteveWebApi");
+        };
         return taskId;
     }
 
@@ -101,11 +103,23 @@ public class ChargingProfileRestController {
         String ocppProtocol = getOcppProtocol(chargeBoxId);
         Integer taskId;
         taskId = switch (ocppProtocol) {
-            case "OCPP1.6J", "OCPP1.6S" -> client16.clearChargingProfile(clearProfileParams);
+            case "OCPP1.6J", "OCPP1.6S" -> client16.clearChargingProfile(clearProfileParams, "SteveWebApi");
             case "OCPP1.5J", "OCPP1.5S", "OCPP1.5" -> null;
             case "OCPP1.2" -> null;
             default -> null;
-        }; //, "SteveWebApi");
+        };
+         return taskId;
+    }
+    
+    private Integer getCompositeSchedule(String chargeBoxId, GetCompositeScheduleParams compositeScheduleParams) {
+        String ocppProtocol = getOcppProtocol(chargeBoxId);
+        Integer taskId;
+        taskId = switch (ocppProtocol) {
+            case "OCPP1.6J", "OCPP1.6S" -> client16.getCompositeSchedule(compositeScheduleParams, "SteveWebApi");
+            case "OCPP1.5J", "OCPP1.5S", "OCPP1.5" -> null;
+            case "OCPP1.2" -> null;
+            default -> null;
+        };
          return taskId;
     }
 
@@ -218,6 +232,24 @@ public class ChargingProfileRestController {
             clearProfileParams.setStackLevel(params.getStackLevel());
         }
         return clearProfile(params.getChargeBoxId(), clearProfileParams);
+    }
+
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 400, message = "Bad Request", response = ApiErrorResponse.class),
+        @ApiResponse(code = 401, message = "Unauthorized", response = ApiErrorResponse.class),
+        @ApiResponse(code = 500, message = "Internal Server Error", response = ApiErrorResponse.class)}
+    )
+    @PostMapping(value = "getcompositeschedule")
+    @ResponseBody
+    public Integer postGetCompositeSchedule(@Valid ApiGetCompositSchedule params) {
+        GetCompositeScheduleParams compositeScheduleParams = new GetCompositeScheduleParams();
+        compositeScheduleParams.setChargePointSelectList(chargePointRepository.getChargePointSelect(params.getChargeBoxId()));
+        compositeScheduleParams.setConnectorId(params.getConnectorId());
+        compositeScheduleParams.setDurationInSeconds(params.getDurationInSeconds());
+        compositeScheduleParams.setChargingRateUnit(params.getChargingRateUnit());
+        
+        return getCompositeSchedule(params.getChargeBoxId(), compositeScheduleParams);
     }
 
     @ApiResponses(value = {
