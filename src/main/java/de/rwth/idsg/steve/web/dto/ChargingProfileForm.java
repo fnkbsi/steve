@@ -43,6 +43,7 @@ import java.util.Objects;
  * @author Sevket Goekay <sevketgokay@gmail.com>
  * @since 12.11.2018
  */
+
 @Getter
 @Setter
 @ToString
