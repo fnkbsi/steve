@@ -91,13 +91,23 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
     }
 
     public int setChargingProfile(SetChargingProfileParams params) {
-        ChargingProfile.Details details = chargingProfileRepository.getDetails(params.getChargingProfilePk());
+        EnhancedSetChargingProfileParams enhancedParams = getEnhancedSetChargingProfileParams(params);
+        SetChargingProfileTask task = new SetChargingProfileTask(getVersion(),
+                enhancedParams,
+                chargingProfileRepository);
+        return addTaskSetChargingProfile(task);
+    }
+    
+    public int setChargingProfile(SetChargingProfileParams params, String caller) {
+        EnhancedSetChargingProfileParams enhancedParams = getEnhancedSetChargingProfileParams(params);
+        SetChargingProfileTask task = new SetChargingProfileTask(getVersion(),
+                enhancedParams,
+                chargingProfileRepository,
+                caller);
+        return addTaskSetChargingProfile(task);
+    }
 
-        checkAdditionalConstraints(params, details);
-
-        EnhancedSetChargingProfileParams enhancedParams = new EnhancedSetChargingProfileParams(params, details);
-        SetChargingProfileTask task = new SetChargingProfileTask(getVersion(), enhancedParams, chargingProfileRepository);
-
+    private int addTaskSetChargingProfile(SetChargingProfileTask task) {
         BackgroundService.with(executorService)
                          .forEach(task.getParams().getChargePointSelectList())
                          .execute(c -> getOcpp16Invoker().setChargingProfile(c, task));
@@ -106,8 +116,21 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
     }
 
     public int clearChargingProfile(ClearChargingProfileParams params) {
-        ClearChargingProfileTask task = new ClearChargingProfileTask(getVersion(), params, chargingProfileRepository);
+        ClearChargingProfileTask task = new ClearChargingProfileTask(getVersion(),
+                params,
+                chargingProfileRepository);
+        return addTaskClearChargingProfile(task);
+    }
 
+    public int clearChargingProfile(ClearChargingProfileParams params, String caller) {
+        ClearChargingProfileTask task = new ClearChargingProfileTask(getVersion(),
+                params,
+                chargingProfileRepository,
+                caller);
+        return addTaskClearChargingProfile(task);
+    }
+
+    private int addTaskClearChargingProfile(ClearChargingProfileTask task) {
         BackgroundService.with(executorService)
                          .forEach(task.getParams().getChargePointSelectList())
                          .execute(c -> getOcpp16Invoker().clearChargingProfile(c, task));
@@ -117,12 +140,30 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
 
     public int getCompositeSchedule(GetCompositeScheduleParams params) {
         GetCompositeScheduleTask task = new GetCompositeScheduleTask(getVersion(), params);
+        return addTaskGetCompositeSchedule(task);
+    }
+
+    public int getCompositeSchedule(GetCompositeScheduleParams params, String caller) {
+        GetCompositeScheduleTask task = new GetCompositeScheduleTask(getVersion(), params, caller);
+        return addTaskGetCompositeSchedule(task);
+    }
+
+    private int addTaskGetCompositeSchedule(GetCompositeScheduleTask task) {
 
         BackgroundService.with(executorService)
                          .forEach(task.getParams().getChargePointSelectList())
                          .execute(c -> getOcpp16Invoker().getCompositeSchedule(c, task));
 
         return taskStore.add(task);
+    }
+
+    private EnhancedSetChargingProfileParams getEnhancedSetChargingProfileParams(SetChargingProfileParams params) {
+        ChargingProfile.Details details = chargingProfileRepository.getDetails(params.getChargingProfilePk());
+
+        checkAdditionalConstraints(params, details);
+
+        EnhancedSetChargingProfileParams enhancedParams = new EnhancedSetChargingProfileParams(params, details);
+        return enhancedParams;
     }
 
     /**
