@@ -102,15 +102,15 @@ public class ChargePointRepositoryImpl implements ChargePointRepository {
                   .fetch()
                   .map(r -> new ChargePointSelect(protocol.getTransport(), r.value1(), r.value2()));
     }
-    
-    @Override  // returns List of 0 or 1 ChargeBox 
-    public List<ChargePointSelect> getChargePointSelect(String chageBoxID)
-    {
+
+    @Override  // returns List of zero or one ChargeBox
+    public List<ChargePointSelect> getChargePointSelect(String chageBoxID) {
         return ctx.select(CHARGE_BOX.CHARGE_BOX_ID, CHARGE_BOX.ENDPOINT_ADDRESS, CHARGE_BOX.OCPP_PROTOCOL)
                 .from(CHARGE_BOX)
                 .where(CHARGE_BOX.CHARGE_BOX_ID.eq(chageBoxID))
                 .fetch()
-                .map(r -> new ChargePointSelect(OcppProtocol.fromCompositeValue(r.value3()).getTransport() , r.value1(), r.value2()));
+                .map(r -> new ChargePointSelect(OcppProtocol.fromCompositeValue(r.value3()).getTransport(),
+                        r.value1(), r.value2()));
     }
 
     @Override
