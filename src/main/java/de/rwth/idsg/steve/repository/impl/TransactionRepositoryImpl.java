@@ -53,7 +53,6 @@ import static jooq.steve.db.tables.TransactionStart.TRANSACTION_START;
 import org.jooq.Field;
 import org.jooq.Record11;
 import org.jooq.Record8;
-//import static org.jooq.impl.DSL.*;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
