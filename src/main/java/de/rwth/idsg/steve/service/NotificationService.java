@@ -161,7 +161,9 @@ public class NotificationService {
                     UserRecord userRecord = new UserRecord();
                     try {
                         userRecord = userRepository.getDetails(ocppTag).getUserRecord();
-                        eMailAddress = userRecord.getEMail();
+                        if (userRecord.getMailEnabled()) {
+                            eMailAddress = userRecord.getEMail();
+                        }
                     } catch (Exception e) {
                         log.error("Failed to send email (SuspendedEV). User not found! " + e.getMessage());
                     }
@@ -210,7 +212,9 @@ public class NotificationService {
 
         try {
             userRecord = userRepository.getDetails(transActParams.getOcppIdTag()).getUserRecord();
-            eMailAddress = userRecord.getEMail();
+            if (userRecord.getMailEnabled()) {
+                eMailAddress = userRecord.getEMail();
+            }
         } catch (Exception e) {
             log.error("Failed to send email (TransactionStop). User not found! " + e.getMessage());
         }
