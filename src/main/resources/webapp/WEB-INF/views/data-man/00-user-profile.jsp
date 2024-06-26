@@ -33,5 +33,6 @@
 	</tr>
 	<tr><td>Phone:</td><td><form:input path="phone"/></td></tr>
 	<tr><td>E-mail:</td><td><form:input path="eMail"/></td></tr>
+        <tr><td>Enable Notifications?:</td><td><form:checkbox path="eMailEnable"/></td></tr>
 	<tr><td>Additional Note:</td><td><form:textarea path="note"/></td></tr>
 </table>

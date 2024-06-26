@@ -61,6 +61,7 @@
                 <th data-sort="string">Name</th>
                 <th data-sort="string">Phone</th>
                 <th data-sort="string">E-Mail</th>
+                <th data-sort="string">Notification</th>
                 <th>
                     <form:form action="${ctxPath}/manager/users/add" method="get">
                         <input type="submit" class="blueSubmit" value="Add New">
@@ -79,6 +80,12 @@
                 <td>${cr.name}</td>
                 <td>${cr.phone}</td>
                 <td>${cr.email}</td>
+                <!--<td>${cr.emailEnable}</td>-->
+                <c:choose>
+                    <c:when test="${cr.emailEnable}"><td><input type="checkbox" checked disabled value="1"/></td></c:when>
+                    <c:otherwise><td><input type="checkbox" value="0" disabled /></td></c:otherwise>
+                </c:choose>
+                
                 <td>
                     <form:form action="${ctxPath}/manager/users/delete/${cr.userPk}">
                         <input type="submit" class="redSubmit" value="Delete">

@@ -52,6 +52,8 @@ public class UserForm {
     @Email(message = "Not a valid e-mail address")
     private String eMail;
 
+    private Boolean eMailEnable;
+
     private Address address;
 
 }

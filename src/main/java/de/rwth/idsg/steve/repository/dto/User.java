@@ -36,6 +36,7 @@ public class User {
     public static final class Overview {
         private final Integer userPk, ocppTagPk;
         private final String ocppIdTag, name, phone, email;
+        private final Boolean emailEnable;
     }
 
     @Getter
