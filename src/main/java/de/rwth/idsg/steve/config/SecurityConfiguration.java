@@ -49,6 +49,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static de.rwth.idsg.steve.SteveConfiguration.CONFIG;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -85,8 +86,7 @@ public class SecurityConfiguration {
                         WebSocketConfiguration.PATH_INFIX + "**",
                         "/WEB-INF/views/**" // https://github.com/spring-projects/spring-security/issues/13285#issuecomment-1579097065
                     ).permitAll()
-                    .requestMatchers(prefix + "/**").hasAuthority("ADMIN")
-                    .requestMatchers(prefix + "/home").hasAnyAuthority("USER", "ADMIN")
+                    .requestMatchers(new AntPathRequestMatcher( prefix + "/home")).hasAnyRole("USER", "ADMIN")
                      // webuser
                     .requestMatchers(prefix + "/webusers").hasAnyAuthority("USER", "ADMIN")
                     .requestMatchers(prefix + "/webusers" + "/details/**").hasAnyAuthority("USER", "ADMIN")
@@ -107,6 +107,7 @@ public class SecurityConfiguration {
                      // singout and noAccess
                     .requestMatchers(prefix + "/signout/" + "**").hasAnyAuthority("USER", "ADMIN")
                     .requestMatchers(prefix + "/noAccess/" + "**").hasAnyAuthority("USER", "ADMIN")
+                    .requestMatchers(prefix + "/**").hasAuthority("ADMIN")
             )
             // SOAP stations are making POST calls for communication. even though the following path is permitted for
             // all access, there is a global default behaviour from spring security: enable CSRF for all POSTs.
