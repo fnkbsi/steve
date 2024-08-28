@@ -86,7 +86,7 @@ public class SecurityConfiguration {
                         WebSocketConfiguration.PATH_INFIX + "**",
                         "/WEB-INF/views/**" // https://github.com/spring-projects/spring-security/issues/13285#issuecomment-1579097065
                     ).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher( prefix + "/home")).hasAnyRole("USER", "ADMIN")
+                    .requestMatchers(new AntPathRequestMatcher( prefix + "/home")).hasAnyAuthority("USER", "ADMIN")
                      // webuser
                     .requestMatchers(prefix + "/webusers").hasAnyAuthority("USER", "ADMIN")
                     .requestMatchers(prefix + "/webusers" + "/details/**").hasAnyAuthority("USER", "ADMIN")
