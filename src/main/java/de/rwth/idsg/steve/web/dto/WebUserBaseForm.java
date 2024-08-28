@@ -18,9 +18,6 @@
  */
 package de.rwth.idsg.steve.web.dto;
 
-//import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,18 +28,15 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class WebUserForm extends WebUserBaseForm {
+public class WebUserBaseForm {
 
-    @NotNull(message = "Password is required")
-    @Size(min=8)
-    private String password = "";
+    // Internal database id
+    private Integer webUserPk;
 
-    @NotNull(message = "Password repetition is required")
-    @Size(min=8)
-    private String passwordComparison;
+    private Boolean enabled;
 
-    //@AssertTrue
-    private Boolean pwError;
+    private String webUsername;
 
-    private String apiToken = "";
+    private WebUserAuthority authorities;
+
 }
