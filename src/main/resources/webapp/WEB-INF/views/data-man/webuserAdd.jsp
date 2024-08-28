@@ -35,7 +35,7 @@
     </div>
 </spring:hasBindErrors>
 <c:if test="${webuserForm.pwError == true}">
-        <div class="error">The password is to short or the password input is not identical.</div>
+        <div class="error">The password input is not identical.</div>
 </c:if>
 <div class="content"><div>
 <section><span>Add Webuser</span></section>
