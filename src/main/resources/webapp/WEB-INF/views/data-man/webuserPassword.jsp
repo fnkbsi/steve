@@ -34,9 +34,6 @@
         </ul>
     </div>
 </spring:hasBindErrors>
-<c:if test="${webuserForm.pwError == true}">
-        <div class="error">The password input is not identical.</div>
-</c:if>
 <div class="content"><div>
 <section><span>Webuser change password</span></section>
     <form:form action="${ctxPath}/manager/webusers/password/${webuserForm.webUserPk}" modelAttribute="webuserForm">

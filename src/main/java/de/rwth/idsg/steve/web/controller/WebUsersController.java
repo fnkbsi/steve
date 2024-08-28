@@ -100,14 +100,6 @@ public class WebUsersController {
             return "data-man/webuserAdd";
         }
 
-        // Compare both the password inputs
-        if (!webuserForm.getPassword().equals(webuserForm.getPasswordComparison())) {
-            webuserForm.setPwError(Boolean.TRUE);
-            return "data-man/webuserAdd";
-        }
-
-        webuserForm.setPwError(Boolean.FALSE);
-
         webUserService.add(webuserForm);
         return toOverview();
     }
@@ -131,7 +123,6 @@ public class WebUsersController {
         webUserForm.setWebUsername(webUserBaseForm.getWebUsername());
         webUserForm.setAuthorities(webUserBaseForm.getAuthorities());
         webUserForm.setEnabled(webUserBaseForm.getEnabled());
-        webUserForm.setPwError(Boolean.FALSE);
         
         model.addAttribute("webuserForm", webUserForm);
         return "data-man/webuserPassword";
@@ -141,11 +132,6 @@ public class WebUsersController {
     public String passwordChange(@Valid @ModelAttribute("webuserForm") WebUserForm webuserForm,
                          BindingResult result, Model model) {
         if (result.hasErrors()) {
-            return "data-man/webuserPassword";
-        }
-
-        if (!webuserForm.getPassword().equals(webuserForm.getPasswordComparison())) {
-            webuserForm.setPwError(Boolean.TRUE);
             return "data-man/webuserPassword";
         }
 
