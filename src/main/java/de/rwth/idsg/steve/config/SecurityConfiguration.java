@@ -78,9 +78,9 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         final String prefix = CONFIG.getSpringManagerMapping();
-        
+
         RequestMatcher toOverview = (request) -> request.getParameter("backToOverview") != null;
-        
+
         return http
             .authorizeHttpRequests(
                 req -> req
