@@ -49,7 +49,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static de.rwth.idsg.steve.SteveConfiguration.CONFIG;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -76,7 +78,9 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         final String prefix = CONFIG.getSpringManagerMapping();
-
+        
+        RequestMatcher toOverview = (request) -> request.getParameter("backToOverview") != null;
+        
         return http
             .authorizeHttpRequests(
                 req -> req
@@ -86,10 +90,15 @@ public class SecurityConfiguration {
                         WebSocketConfiguration.PATH_INFIX + "**",
                         "/WEB-INF/views/**" // https://github.com/spring-projects/spring-security/issues/13285#issuecomment-1579097065
                     ).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher( prefix + "/home")).hasAnyAuthority("USER", "ADMIN")
-                     // webuser
-                    .requestMatchers(prefix + "/webusers").hasAnyAuthority("USER", "ADMIN")
-                    .requestMatchers(prefix + "/webusers" + "/details/**").hasAnyAuthority("USER", "ADMIN")
+                    .requestMatchers(prefix + "/home").hasAnyAuthority("USER", "ADMIN")
+                    // webuser
+                        //only allowed to change the own password
+                    .requestMatchers(prefix + "/webusers" + "/password/{name}")
+                        .access(new WebExpressionAuthorizationManager("#name == authentication.name"))
+                        // otherwise denies access on backToOverview!
+                    .requestMatchers(toOverview).hasAnyAuthority("USER", "ADMIN")
+                    .requestMatchers(HttpMethod.GET, prefix + "/webusers/**").hasAnyAuthority("USER", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, prefix + "/webusers/**").hasAuthority("ADMIN")
                     // users
                     .requestMatchers(prefix + "/users").hasAnyAuthority("USER", "ADMIN")
                     .requestMatchers(prefix + "/users" + "/details/**").hasAnyAuthority("USER", "ADMIN")
