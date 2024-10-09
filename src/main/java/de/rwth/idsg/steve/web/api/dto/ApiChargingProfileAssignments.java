@@ -20,7 +20,7 @@ package de.rwth.idsg.steve.web.api.dto;
 
 import de.rwth.idsg.steve.repository.dto.ChargingProfile;
 import de.rwth.idsg.steve.repository.dto.ChargingProfileAssignment;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -38,12 +38,12 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class ApiChargingProfileAssignments {
 
-    @ApiModelProperty(value = "List of charge box IDs")
+    @Schema(description = "List of charge box IDs")
     List<String> chargeBoxIds =  new ArrayList<>();
 
-    @ApiModelProperty(value = "Charging Profiles Basic Info")
+    @Schema(description = "Charging Profiles Basic Info")
     List<ChargingProfile.BasicInfo> profilesBasicInfo;
 
-    @ApiModelProperty(value = "Charging Profiles Assignments")
+    @Schema(description = "Charging Profiles Assignments")
     List<ChargingProfileAssignment> assignments;
 }

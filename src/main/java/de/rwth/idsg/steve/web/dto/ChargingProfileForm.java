@@ -18,7 +18,7 @@
  */
 package de.rwth.idsg.steve.web.dto;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -50,52 +50,52 @@ import java.util.Objects;
 public class ChargingProfileForm {
 
     // Internal database id
-    @ApiModelProperty(value = "Charging Profile Pk")
+    @Schema(description = "Charging Profile Pk")
     private Integer chargingProfilePk;
 
-    @ApiModelProperty(value = "Charging Profile description")
+    @Schema(description = "Charging Profile description")
     private String description;
-    @ApiModelProperty(value = "Charging Profile note")
+    @Schema(description = "Charging Profile note")
     private String note;
 
-    @ApiModelProperty(value = "Charging Profile Stack Level")
+    @Schema(description = "Charging Profile Stack Level")
     @NotNull(message = "Stack Level has to be set")
     @PositiveOrZero(message = "Stack Level has to be a positive number or 0")
     private Integer stackLevel;
 
-    @ApiModelProperty(value = "Charging Profile Purpose")
+    @Schema(description = "Charging Profile Purpose")
     @NotNull(message = "Charging Profile Purpose has to be set")
     private ChargingProfilePurposeType chargingProfilePurpose;
 
-    @ApiModelProperty(value = "Charging Profile Kind")
+    @Schema(description = "Charging Profile Kind")
     @NotNull(message = "Charging Profile Kind has to be set")
     private ChargingProfileKindType chargingProfileKind;
 
-    @ApiModelProperty(value = "Recurrency Kind")
+    @Schema(description = "Recurrency Kind")
     private RecurrencyKindType recurrencyKind;
 
-    @ApiModelProperty(value = "Starttime of the Profile")
+    @Schema(description = "Starttime of the Profile")
     private LocalDateTime validFrom;
 
-    @ApiModelProperty(value = "Endtime of the Profile")
+    @Schema(description = "Endtime of the Profile")
     @Future(message = "Valid To must be in future")
     private LocalDateTime validTo;
 
-    @ApiModelProperty(value = "Profile duration")
+    @Schema(description = "Profile duration")
     @Positive(message = "Duration has to be a positive number")
     private Integer durationInSeconds;
 
-    @ApiModelProperty(value = "Schedule Start")
+    @Schema(description = "Schedule Start")
     private LocalDateTime startSchedule;
 
-    @ApiModelProperty(value = "Charging Rate Unit")
+    @Schema(description = "Charging Rate Unit")
     @NotNull(message = "Charging Rate Unit has to be set")
     private ChargingRateUnitType chargingRateUnit;
 
-    @ApiModelProperty(value = "Minimum Charging Rate")
+    @Schema(description = "Minimum Charging Rate")
     private BigDecimal minChargingRate;
 
-    @ApiModelProperty(value = "Schedule Periods")
+    @Schema(description = "Schedule Periods")
     @NotEmpty(message = "Schedule Periods cannot be empty")
     @Valid
     private Map<String, SchedulePeriod> schedulePeriodMap;
@@ -138,18 +138,18 @@ public class ChargingProfileForm {
     @ToString
     public static class SchedulePeriod {
 
-        @ApiModelProperty(value = "Schedule period default number of phases")
+        @Schema(description = "Schedule period default number of phases")
         private static final int defaultNumberPhases = 3;
 
-        @ApiModelProperty(value = "Schedule Period Start")
+        @Schema(description = "Schedule Period Start")
         @NotNull(message = "Schedule period: Start Period has to be set")
         private Integer startPeriodInSeconds; // from the startSchedule
 
-        @ApiModelProperty(value = "Schedule period power limit")
+        @Schema(description = "Schedule period power limit")
         @NotNull(message = "Schedule period: Power Limit has to be set")
         private BigDecimal powerLimit;
 
-        @ApiModelProperty(value = "Schedule period number phases")
+        @Schema(description = "Schedule period number phases")
         private Integer numberPhases;
 
         public Integer getNumberPhases() {

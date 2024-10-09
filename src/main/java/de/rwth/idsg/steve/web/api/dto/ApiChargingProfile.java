@@ -19,9 +19,9 @@
 package de.rwth.idsg.steve.web.api.dto;
 
 import de.rwth.idsg.steve.web.dto.ocpp.ClearChargingProfileFilterType;
-import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -37,23 +37,23 @@ import ocpp.cp._2015._10.ChargingProfilePurposeType;
 @RequiredArgsConstructor
 public class ApiChargingProfile {
 
-    @ApiModelProperty(value = "Charge Box ID")
+    @Schema(description = "Charge Box ID")
     String chargeBoxId;
 
-    @ApiModelProperty(value = "Filter Type is required")
+    @Schema(description = "Filter Type is required")
     @NotNull(message = "Filter Type is required")
     private ClearChargingProfileFilterType filterType; // = ClearChargingProfileFilterType.ChargingProfileId;
 
-    @ApiModelProperty(value = "Profile ID")
+    @Schema(description = "Profile ID")
     Integer profilePk;
 
-    @ApiModelProperty(value = "Connector ID")
+    @Schema(description = "Connector ID")
     @Min(value = 0, message = "Connector ID must be at least {value}")
     private Integer connectorId;
 
-    @ApiModelProperty(value = "Charging Profil Purpose")
+    @Schema(description = "Charging Profil Purpose")
     private ChargingProfilePurposeType chargingProfilePurpose;
 
-    @ApiModelProperty(value = "Stack Level")
+    @Schema(description = "Stack Level")
     private Integer stackLevel;
 }

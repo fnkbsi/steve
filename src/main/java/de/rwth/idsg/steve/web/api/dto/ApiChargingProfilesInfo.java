@@ -19,7 +19,7 @@
 package de.rwth.idsg.steve.web.api.dto;
 
 import de.rwth.idsg.steve.repository.dto.ChargingProfile;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -36,9 +36,9 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class ApiChargingProfilesInfo {
 
-    @ApiModelProperty(value = "Chargepoints")
+    @Schema(description = "Chargepoints")
     ApiChargePointList chargePointList;
 
-    @ApiModelProperty(value = "Charging Profiles")
+    @Schema(description = "Charging Profiles")
     List<ChargingProfile.Overview> chargingProfiles;
 }

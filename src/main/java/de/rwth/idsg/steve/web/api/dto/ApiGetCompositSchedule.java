@@ -18,10 +18,10 @@
  */
 package de.rwth.idsg.steve.web.api.dto;
 
-import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -37,18 +37,18 @@ import ocpp.cp._2015._10.ChargingRateUnitType;
 @RequiredArgsConstructor
 public class ApiGetCompositSchedule {
 
-    @ApiModelProperty(value = "Charge Box ID")
+    @Schema(description = "Charge Box ID")
     String chargeBoxId;
 
-    @ApiModelProperty(value = "Connector ID")
+    @Schema(description = "Connector ID")
     @Min(value = 0, message = "Connector ID must be at least {value}")
     private Integer connectorId;
 
-    @ApiModelProperty(value = "Duration in seconds")
+    @Schema(description = "Duration in seconds")
     @NotNull
     @Positive
     private Integer durationInSeconds;
 
-    @ApiModelProperty(value = "Charging rate unit")
+    @Schema(description = "Charging rate unit")
     private ChargingRateUnitType chargingRateUnit;
 }
