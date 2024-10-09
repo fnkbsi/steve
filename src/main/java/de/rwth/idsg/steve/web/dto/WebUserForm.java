@@ -32,22 +32,22 @@ import lombok.Getter;
 public class WebUserForm extends WebUserBaseForm {
 
     @NotNull(message = "Password is required")
-    @Size(min=8, message = "Password requires 8 or more characters")
+    @Size(min = 8, message = "Password requires 8 or more characters")
     private String password = "";
 
     @NotNull(message = "Password repetition is required")
-    @Size(min=8, message = "The repeated password also requires 8 or more characters")
+    @Size(min = 8, message = "The repeated password also requires 8 or more characters")
     private String passwordComparison;
 
     @AssertFalse(message = "The repeated password did not match!")
     private Boolean pwError;
 
-    private String apiToken = "";
-    
+    private String apiPassword = "";
+
     public void setPassword(String password) {
         this.password = password;
     }
-    
+
     public void setPasswordComparison(String passwordComparison) {
         this.pwError = true;
         this.passwordComparison = passwordComparison;
@@ -55,8 +55,8 @@ public class WebUserForm extends WebUserBaseForm {
             this.pwError = !passwordComparison.equals(this.password);
         }
     }
-    
-    public void setApiToken(String apiToken) {
-        this.apiToken = apiToken;
+
+    public void setApiPassword(String apiPassword) {
+        this.apiPassword = apiPassword;
     }
 }
