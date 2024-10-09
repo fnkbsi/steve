@@ -65,8 +65,8 @@
                 </tr>                
                 <tr><td></td>
                     <td id="add_space">
-			<input type="submit" name="update" value="Update" method="POST">
-			<input type="submit" name="backToOverview" value="Back to Overview" method="GET">
+            <input type="submit" name="update" value="Update">
+            <input type="submit" name="backToOverview" value="Back to Overview">
                     </td>
                 </tr>
             </tbody>
