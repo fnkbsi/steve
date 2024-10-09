@@ -153,10 +153,6 @@ public class WebUsersController {
     @RequestMapping(params = "backToOverview", value = PASSWORD_PATH, method = RequestMethod.POST)
     public String passwordBackToOverview(@Valid @ModelAttribute("webuserForm") WebUserForm webuserForm,
                          BindingResult result, Model model) {
-        if (result.hasErrors()) {
-            return toOverview();
-        }
-
         String redirect_str = String.format("redirect:/manager/webusers/details/%s", webuserForm.getWebUserPk());
         return redirect_str;
     }
