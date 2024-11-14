@@ -40,12 +40,12 @@
                         <form:hidden path="webUserPk" readonly="true"/>
                 </td></tr>
                 <tr><td></td>
-                    <td><a href="${ctxPath}/manager/webusers/password/${webuserForm.webUsername}">
+                    <td style="padding-bottom: 10px"><a href="${ctxPath}/manager/webusers/password/${webuserForm.webUsername}">
                         <B>Change Password</B></a>
                     </td>
                 </tr>
                 <tr><td></td>
-                    <td><a href="${ctxPath}/manager/webusers/apipassword/${webuserForm.webUsername}">
+                    <td  style="padding-bottom: 10px"><a href="${ctxPath}/manager/webusers/apipassword/${webuserForm.webUsername}">
                         <B>Change API Password</B></a>
                     </td>
                 </tr>
