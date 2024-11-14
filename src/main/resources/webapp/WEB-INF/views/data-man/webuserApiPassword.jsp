@@ -41,7 +41,8 @@
                     <form:hidden path="password" value="doNotChange"/>
                     <form:hidden path="passwordComparison" value="doNotChange"/>
             </td></tr>
-            <tr><td>APIPassword:</td><td><form:password path="apiPassword" title="Set the API password"/></td></tr>
+            <tr><td>API Password:</td><td><form:password path="apiPassword" title="Set the API password"/></td></tr>
+            <tr><td>API Password confirmation:</td><td><form:password  path="apiPasswordComparison" title="Confirm the API password"/></td></tr>
             <tr><td></td>
                 <td id="add_space">
                     <input type="submit" name="change" value="Change">

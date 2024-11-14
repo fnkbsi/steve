@@ -38,6 +38,8 @@
             <tr><td>Webusername:</td><td>${webuserForm.webUsername}
                     <form:hidden path="webUsername" value="${webuserForm.webUsername}"/>
                     <form:hidden path="webUserPk" value="${webuserForm.webUserPk}"/>
+                    <form:hidden path="apiPassword" value="doNotChange"/>
+                    <form:hidden path="apiPasswordComparison" value="doNotChange"/>
             </td></tr>
             <tr><td>Password:</td><td><form:password path="password" title="Set the password"/></td></tr>
             <tr><td>Password confirmation:</td><td><form:password  path="passwordComparison" title="Confirm the password"/></td></tr>

@@ -42,7 +42,16 @@ public class WebUserForm extends WebUserBaseForm {
     @AssertFalse(message = "The repeated password did not match!")
     private Boolean pwError;
 
+    @NotNull(message = "API Password is required")
+    @Size(min = 8, message = "API Password requires 8 or more characters")
     private String apiPassword = "";
+    
+    @NotNull(message = "API Password repetition is required")
+    @Size(min = 8, message = "The repeated API password also requires 8 or more characters")
+    private String apiPasswordComparison;
+    
+    @AssertFalse(message = "The repeated API password did not match!")
+    private Boolean apiPwError;
 
     public void setPassword(String password) {
         this.password = password;
@@ -58,5 +67,13 @@ public class WebUserForm extends WebUserBaseForm {
 
     public void setApiPassword(String apiPassword) {
         this.apiPassword = apiPassword;
+    }
+    
+    public void setApiPasswordComparison(String apiPasswordComparison) {
+        this.apiPwError = true;
+        this.apiPasswordComparison = apiPasswordComparison;
+        if (apiPasswordComparison != null) {
+            this.apiPwError = !apiPasswordComparison.equals(this.apiPassword);
+        }
     }
 }
