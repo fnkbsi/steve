@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.validation.ObjectError;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -56,7 +57,12 @@ public class ApiControllerAdvice {
     public ApiErrorResponse handleBindException(HttpServletRequest req, BindException exception) {
         String url = req.getRequestURL().toString();
         log.error("Request: {} raised following exception.", url, exception);
-        return createResponse(url, HttpStatus.BAD_REQUEST, "Error understanding the request");
+        String errorMsg = "";
+        for (ObjectError error:exception.getBindingResult().getAllErrors()) {
+            errorMsg = errorMsg.concat(error.getDefaultMessage() + "; ");
+        }
+        log.error("Request: {} raised following BindingResult errors. {}", url, errorMsg);
+        return createResponse(url, HttpStatus.BAD_REQUEST, "Error understanding the request: " + errorMsg);
     }
 
     @ExceptionHandler(SteveException.NotFound.class)
