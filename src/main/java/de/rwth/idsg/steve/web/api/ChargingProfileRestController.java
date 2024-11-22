@@ -60,6 +60,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * @author fnkbsi
@@ -112,7 +115,7 @@ public class ChargingProfileRestController {
         };
          return taskId;
     }
-    
+
     private Integer getCompositeSchedule(String chargeBoxId, GetCompositeScheduleParams compositeScheduleParams) {
         String ocppProtocol = getOcppProtocol(chargeBoxId);
         Integer taskId;
@@ -152,8 +155,12 @@ public class ChargingProfileRestController {
 
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
         @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
     )
     @GetMapping(value = "")
@@ -167,9 +174,15 @@ public class ChargingProfileRestController {
 
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))})}
     )
     @GetMapping(value = "details")
     @ResponseBody
@@ -180,18 +193,48 @@ public class ChargingProfileRestController {
 
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))})}
     )
     @GetMapping(value = "assignment")
     @ResponseBody
-    public ApiChargingProfileAssignments getAssignments(@Valid ChargingProfileAssignmentQueryForm form) {
+    public ApiChargingProfileAssignments getAssignments(@RequestBody @Valid ChargingProfileAssignmentQueryForm form) {
         ApiChargingProfileAssignments assignmentInfo = new ApiChargingProfileAssignments();
         assignmentInfo.setProfilesBasicInfo(chargingProfileRepository.getBasicInfo());
         assignmentInfo.setChargeBoxIds(chargePointRepository.getChargeBoxIds());
         assignmentInfo.setAssignments(chargingProfileRepository.getAssignments(form));
         return assignmentInfo;
+    }
+
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                content = {@Content(mediaType = "application/json",
+                        schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))})}
+    )
+    @GetMapping(value = "compositeschedule")
+    @ResponseBody
+    public Integer getCompositeSchedule(@RequestBody @Valid ApiGetCompositSchedule params) {
+        GetCompositeScheduleParams compositeScheduleParams = new GetCompositeScheduleParams();
+        compositeScheduleParams.setChargePointSelectList(chargePointRepository.getChargePointSelect(params.getChargeBoxId()));
+        compositeScheduleParams.setConnectorId(params.getConnectorId());
+        compositeScheduleParams.setDurationInSeconds(params.getDurationInSeconds());
+        compositeScheduleParams.setChargingRateUnit(params.getChargingRateUnit());
+
+        return getCompositeSchedule(params.getChargeBoxId(), compositeScheduleParams);
     }
 
     // -------------------------------------------------------------------------
@@ -201,13 +244,25 @@ public class ChargingProfileRestController {
 
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "422", description = "Unprocessable Entity",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))})}
     )
     @PostMapping(value = "setchargingprofile")
     @ResponseBody
-    public Integer postSetChargingProfile(@Valid ApiChargingProfile params) {
+    public Integer postSetChargingProfile(@RequestBody @Valid ApiChargingProfile params) {
         SetChargingProfileParams setProfileParams = new SetChargingProfileParams();
         setProfileParams.setChargePointSelectList(chargePointRepository.getChargePointSelect(params.getChargeBoxId()));
         setProfileParams.setConnectorId(params.getConnectorId());
@@ -217,13 +272,19 @@ public class ChargingProfileRestController {
 
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))})}
     )
     @PostMapping(value = "clearchargingprofile")
     @ResponseBody
-    public Integer postClearChargingProfile(@Valid ApiChargingProfile params) {
+    public Integer postClearChargingProfile(@RequestBody @Valid ApiChargingProfile params) {
         ClearChargingProfileParams clearProfileParams = new ClearChargingProfileParams();
         clearProfileParams.setChargePointSelectList(chargePointRepository.getChargePointSelect(params.getChargeBoxId()));
         if (params.getFilterType() == ClearChargingProfileFilterType.ChargingProfileId) {
@@ -236,59 +297,65 @@ public class ChargingProfileRestController {
         return clearProfile(params.getChargeBoxId(), clearProfileParams);
     }
 
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
-    )
-    @PostMapping(value = "getcompositeschedule")
-    @ResponseBody
-    public Integer postGetCompositeSchedule(@Valid ApiGetCompositSchedule params) {
-        GetCompositeScheduleParams compositeScheduleParams = new GetCompositeScheduleParams();
-        compositeScheduleParams.setChargePointSelectList(chargePointRepository.getChargePointSelect(params.getChargeBoxId()));
-        compositeScheduleParams.setConnectorId(params.getConnectorId());
-        compositeScheduleParams.setDurationInSeconds(params.getDurationInSeconds());
-        compositeScheduleParams.setChargingRateUnit(params.getChargingRateUnit());
-        
-        return getCompositeSchedule(params.getChargeBoxId(), compositeScheduleParams);
-    }
+    // -------------------------------------------------------------------------
+    // Http methods (POST)
+    // the methods return database information
+    // -------------------------------------------------------------------------
 
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+        @ApiResponse(responseCode = "201", description = "Created"),
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))})}
     )
     @PostMapping(value = "add")
     @ResponseBody
-    public Integer addPost(@Valid ChargingProfileForm form) {
-        return chargingProfileRepository.add(form);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Integer addPost(@RequestBody @Valid ChargingProfileForm form) {
+        return chargingProfileRepository.add(form);   // return the profilePk of the added profile
     }
 
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))})}
     )
     @PostMapping(value = "update")
     @ResponseBody
-    public ChargingProfileForm update(@Valid ChargingProfileForm form) {
+    public ChargingProfileForm update(@RequestBody @Valid ChargingProfileForm form) {
         chargingProfileRepository.update(form);
-        return getDetails(form.getChargingProfilePk());
+        return getDetails(form.getChargingProfilePk()); // returns the updated profile details
     }
 
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+        @ApiResponse(responseCode = "400", description = "Bad Request",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                     content = {@Content(mediaType = "application/json",
+                     schema = @Schema(implementation = ApiErrorResponse.class))})}
     )
     @PostMapping(value = "delete")
     @ResponseBody
     public ApiChargingProfilesInfo delete(@Valid Integer chargingProfilePk) {
         chargingProfileRepository.delete(chargingProfilePk);
-        return getChargingProfiles();
+        return getChargingProfiles(); // return the list of the remaining profiles
     }
 }
