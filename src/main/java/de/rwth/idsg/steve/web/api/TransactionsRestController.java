@@ -72,7 +72,7 @@ public class TransactionsRestController {
         log.debug("Read response for query: {}", response);
         return response;
     }
-    
+
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
@@ -88,7 +88,7 @@ public class TransactionsRestController {
         log.debug("Read response for query: {}", response);
         return response;
     }
-    
+
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
@@ -104,7 +104,7 @@ public class TransactionsRestController {
         log.debug("Read response for query: {}", response);
         return response;
     }
-    
+
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK"),
         @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),

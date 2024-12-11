@@ -20,7 +20,9 @@ package de.rwth.idsg.steve.web.api;
 
 import de.rwth.idsg.steve.repository.TransactionRepository;
 import de.rwth.idsg.steve.repository.dto.Transaction;
+import de.rwth.idsg.steve.repository.dto.TransactionDetails;
 import de.rwth.idsg.steve.web.dto.TransactionQueryForm;
+import java.util.Arrays;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +42,8 @@ import java.util.List;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -249,6 +253,58 @@ public class TransactionRestControllerTest extends AbstractControllerTest {
 
         assertEquals(capturedForm.getType(), TransactionQueryForm.QueryType.ALL);
         assertEquals(capturedForm.getPeriodType(), TransactionQueryForm.QueryPeriodType.LAST_30);
+    }
+
+    @Test
+    @DisplayName("Test details with path variable, expected 200")
+    public void test12() throws Exception {
+        // given
+        //TransactionDetails results = new TransactionDetails();
+        List<TransactionDetails.MeterValues> meter = List.of(TransactionDetails.MeterValues.builder().build());
+        TransactionDetails results = new TransactionDetails(Transaction.builder().id(234).build(), meter, null);
+
+        // when
+        when(transactionRepository.getDetails(anyInt())).thenReturn(results);
+
+        // then
+        mockMvc.perform(get("/api/v1/transactions/details/234"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.transaction.id").value("234"));
+    }
+
+    @Test
+    @DisplayName("Test details with request parameter, expected 200")
+    public void test13() throws Exception {
+        // given
+        //TransactionDetails results = new TransactionDetails();
+        List<TransactionDetails.MeterValues> meter = List.of(TransactionDetails.MeterValues.builder().build());
+        TransactionDetails results = new TransactionDetails(Transaction.builder().id(234).build(), meter, null);
+
+        // when
+        when(transactionRepository.getDetails(anyInt())).thenReturn(results);
+
+        // then
+        mockMvc.perform(get("/api/v1/transactions/details")
+                        .param("transactionPk", "234"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.transaction.id").value("234"));
+    }
+
+    @Test
+    @DisplayName("Test activeTransactions, expected 200")
+    public void test14() throws Exception {
+        // given
+
+        List<Integer> results = Arrays.asList(1, 2, 3);
+
+        // when
+        when(transactionRepository.getActiveTransactionIds(anyString())).thenReturn(results);
+
+        // then
+        mockMvc.perform(get("/api/v1/transactions/activeTransactions")
+                        .param("chargeBoxId", "testbox"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)));
     }
 
     private static ResultMatcher[] errorJsonMatchers() {
