@@ -20,6 +20,7 @@ package de.rwth.idsg.steve.web.api;
 
 import de.rwth.idsg.steve.repository.TransactionRepository;
 import de.rwth.idsg.steve.repository.dto.Transaction;
+import de.rwth.idsg.steve.repository.dto.TransactionDetails;
 import de.rwth.idsg.steve.web.api.ApiControllerAdvice.ApiErrorResponse;
 import de.rwth.idsg.steve.web.api.exception.BadRequestException;
 import de.rwth.idsg.steve.web.dto.TransactionQueryForm;
@@ -37,6 +38,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -66,6 +69,54 @@ public class TransactionsRestController {
         }
 
         var response = transactionRepository.getTransactions(params);
+        log.debug("Read response for query: {}", response);
+        return response;
+    }
+
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+    )
+    @GetMapping(value = "/details")
+    @ResponseBody
+    public TransactionDetails getDetails(@RequestParam(name = "transactionPk") @Valid Integer transactionPk) {
+        log.debug("Read request for transaction: {}", transactionPk);
+
+        var response = transactionRepository.getDetails(transactionPk);
+        log.debug("Read response for query: {}", response);
+        return response;
+    }
+
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+    )
+    @GetMapping(value = "/details/{transactionPk}")
+    @ResponseBody
+    public TransactionDetails getTransactionDetails(@PathVariable("transactionPk") Integer transactionPk) {
+        log.debug("Read request for transaction: {}", transactionPk);
+
+        var response = transactionRepository.getDetails(transactionPk);
+        log.debug("Read response for query: {}", response);
+        return response;
+    }
+
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))}),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))})}
+    )
+    @GetMapping(value = "activeTransactions")
+    @ResponseBody
+    public List<Integer> getActiveTransactions(@RequestParam(name = "chargeBoxId") @Valid String chargeBoxId) {
+        log.debug("Read request for active transactions on charge box: {}", chargeBoxId);
+
+        var response = transactionRepository.getActiveTransactionIds(chargeBoxId);
         log.debug("Read response for query: {}", response);
         return response;
     }
