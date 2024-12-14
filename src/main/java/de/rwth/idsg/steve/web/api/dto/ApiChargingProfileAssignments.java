@@ -16,30 +16,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package de.rwth.idsg.steve.web.dto.ocpp;
+package de.rwth.idsg.steve.web.api.dto;
 
+import de.rwth.idsg.steve.repository.dto.ChargingProfile;
+import de.rwth.idsg.steve.repository.dto.ChargingProfileAssignment;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 /**
- * @author Sevket Goekay <sevketgokay@gmail.com>
- * @since 12.11.2018
+ * @author fnkbsi
+ * @since 03.11.2023
  */
-@Setter
+
 @Getter
-public class SetChargingProfileParams extends MultipleChargePointSelect {
+@Setter
+@RequiredArgsConstructor
+public class ApiChargingProfileAssignments {
 
-    @NotNull
-    @Min(value = 0, message = "Connector ID must be at least {value}")
-    private Integer connectorId;
+    @Schema(description = "List of charge box IDs")
+    List<String> chargeBoxIds =  new ArrayList<>();
 
-    @NotNull
-    @Positive
-    private Integer chargingProfilePk;
+    @Schema(description = "Charging Profiles Basic Info")
+    List<ChargingProfile.BasicInfo> profilesBasicInfo;
 
-    private Integer transactionId;
+    @Schema(description = "Charging Profiles Assignments")
+    List<ChargingProfileAssignment> assignments;
 }

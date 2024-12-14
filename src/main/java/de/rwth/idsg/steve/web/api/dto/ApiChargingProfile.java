@@ -16,30 +16,44 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package de.rwth.idsg.steve.web.dto.ocpp;
+package de.rwth.idsg.steve.web.api.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-
+import de.rwth.idsg.steve.web.dto.ocpp.ClearChargingProfileFilterType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import ocpp.cp._2015._10.ChargingProfilePurposeType;
 
 /**
- * @author Sevket Goekay <sevketgokay@gmail.com>
- * @since 12.11.2018
+ * @author fnkbsi
+ * @since 03.11.2023
  */
-@Setter
-@Getter
-public class SetChargingProfileParams extends MultipleChargePointSelect {
 
-    @NotNull
+@Getter
+@Setter
+@RequiredArgsConstructor
+public class ApiChargingProfile {
+
+    @Schema(description = "Charge Box ID")
+    String chargeBoxId;
+
+    @Schema(description = "Filter Type is required")
+    @NotNull(message = "Filter Type is required")
+    private ClearChargingProfileFilterType filterType; // = ClearChargingProfileFilterType.ChargingProfileId;
+
+    @Schema(description = "Profile ID")
+    Integer profilePk;
+
+    @Schema(description = "Connector ID")
     @Min(value = 0, message = "Connector ID must be at least {value}")
     private Integer connectorId;
 
-    @NotNull
-    @Positive
-    private Integer chargingProfilePk;
+    @Schema(description = "Charging Profil Purpose")
+    private ChargingProfilePurposeType chargingProfilePurpose;
 
-    private Integer transactionId;
+    @Schema(description = "Stack Level")
+    private Integer stackLevel;
 }

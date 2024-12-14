@@ -45,6 +45,14 @@ public class ClearChargingProfileTask extends Ocpp16AndAboveTask<ClearChargingPr
         this.chargingProfileRepository = chargingProfileRepository;
     }
 
+    public ClearChargingProfileTask(OcppVersion ocppVersion,
+                                    ClearChargingProfileParams params,
+                                    ChargingProfileRepository chargingProfileRepository,
+                                    String caller) {
+        super(ocppVersion, params, caller);
+        this.chargingProfileRepository = chargingProfileRepository;
+    }
+
     @Override
     public OcppCallback<String> defaultCallback() {
         return new DefaultOcppCallback<String>() {

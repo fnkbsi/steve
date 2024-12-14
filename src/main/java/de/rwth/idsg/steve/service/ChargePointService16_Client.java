@@ -29,6 +29,7 @@ import de.rwth.idsg.steve.ocpp.task.GetCompositeScheduleTask;
 import de.rwth.idsg.steve.ocpp.task.SetChargingProfileTask;
 import de.rwth.idsg.steve.ocpp.task.TriggerMessageTask;
 import de.rwth.idsg.steve.repository.ChargingProfileRepository;
+import de.rwth.idsg.steve.repository.TransactionRepository;
 import de.rwth.idsg.steve.repository.dto.ChargingProfile;
 import de.rwth.idsg.steve.service.dto.EnhancedSetChargingProfileParams;
 import de.rwth.idsg.steve.web.dto.ocpp.ClearChargingProfileParams;
@@ -41,6 +42,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import static java.util.Objects.isNull;
+
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
  * @since 13.03.2018
@@ -52,6 +55,7 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
 
     @Autowired private ChargePointService16_InvokerImpl invoker16;
     @Autowired private ChargingProfileRepository chargingProfileRepository;
+    @Autowired private TransactionRepository transactionRepository;
 
     @Override
     protected OcppVersion getVersion() {
@@ -87,13 +91,23 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
     }
 
     public int setChargingProfile(SetChargingProfileParams params) {
-        ChargingProfile.Details details = chargingProfileRepository.getDetails(params.getChargingProfilePk());
+        EnhancedSetChargingProfileParams enhancedParams = getEnhancedSetChargingProfileParams(params);
+        SetChargingProfileTask task = new SetChargingProfileTask(getVersion(),
+                enhancedParams,
+                chargingProfileRepository);
+        return addTaskSetChargingProfile(task);
+    }
+    
+    public int setChargingProfile(SetChargingProfileParams params, String caller) {
+        EnhancedSetChargingProfileParams enhancedParams = getEnhancedSetChargingProfileParams(params);
+        SetChargingProfileTask task = new SetChargingProfileTask(getVersion(),
+                enhancedParams,
+                chargingProfileRepository,
+                caller);
+        return addTaskSetChargingProfile(task);
+    }
 
-        checkAdditionalConstraints(params, details);
-
-        EnhancedSetChargingProfileParams enhancedParams = new EnhancedSetChargingProfileParams(params, details);
-        SetChargingProfileTask task = new SetChargingProfileTask(getVersion(), enhancedParams, chargingProfileRepository);
-
+    private int addTaskSetChargingProfile(SetChargingProfileTask task) {
         BackgroundService.with(executorService)
                          .forEach(task.getParams().getChargePointSelectList())
                          .execute(c -> getOcpp16Invoker().setChargingProfile(c, task));
@@ -102,8 +116,21 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
     }
 
     public int clearChargingProfile(ClearChargingProfileParams params) {
-        ClearChargingProfileTask task = new ClearChargingProfileTask(getVersion(), params, chargingProfileRepository);
+        ClearChargingProfileTask task = new ClearChargingProfileTask(getVersion(),
+                params,
+                chargingProfileRepository);
+        return addTaskClearChargingProfile(task);
+    }
 
+    public int clearChargingProfile(ClearChargingProfileParams params, String caller) {
+        ClearChargingProfileTask task = new ClearChargingProfileTask(getVersion(),
+                params,
+                chargingProfileRepository,
+                caller);
+        return addTaskClearChargingProfile(task);
+    }
+
+    private int addTaskClearChargingProfile(ClearChargingProfileTask task) {
         BackgroundService.with(executorService)
                          .forEach(task.getParams().getChargePointSelectList())
                          .execute(c -> getOcpp16Invoker().clearChargingProfile(c, task));
@@ -113,6 +140,15 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
 
     public int getCompositeSchedule(GetCompositeScheduleParams params) {
         GetCompositeScheduleTask task = new GetCompositeScheduleTask(getVersion(), params);
+        return addTaskGetCompositeSchedule(task);
+    }
+
+    public int getCompositeSchedule(GetCompositeScheduleParams params, String caller) {
+        GetCompositeScheduleTask task = new GetCompositeScheduleTask(getVersion(), params, caller);
+        return addTaskGetCompositeSchedule(task);
+    }
+
+    private int addTaskGetCompositeSchedule(GetCompositeScheduleTask task) {
 
         BackgroundService.with(executorService)
                          .forEach(task.getParams().getChargePointSelectList())
@@ -121,10 +157,19 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
         return taskStore.add(task);
     }
 
+    private EnhancedSetChargingProfileParams getEnhancedSetChargingProfileParams(SetChargingProfileParams params) {
+        ChargingProfile.Details details = chargingProfileRepository.getDetails(params.getChargingProfilePk());
+
+        checkAdditionalConstraints(params, details);
+
+        EnhancedSetChargingProfileParams enhancedParams = new EnhancedSetChargingProfileParams(params, details);
+        return enhancedParams;
+    }
+
     /**
      * Do some additional checks defined by OCPP spec, which cannot be captured with javax.validation
      */
-    private static void checkAdditionalConstraints(SetChargingProfileParams params, ChargingProfile.Details details) {
+    private void checkAdditionalConstraints(SetChargingProfileParams params, ChargingProfile.Details details) {
         ChargingProfilePurposeType purpose = ChargingProfilePurposeType.fromValue(details.getProfile().getChargingProfilePurpose());
 
         if (ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE == purpose
@@ -134,10 +179,33 @@ public class ChargePointService16_Client extends ChargePointService15_Client {
         }
 
         if (ChargingProfilePurposeType.TX_PROFILE == purpose
-                && params.getConnectorId() != null
-                && params.getConnectorId() < 1) {
-            throw new SteveException("TxProfile should only be set at Charge Point ConnectorId > 0");
+                && ((params.getConnectorId() != null && params.getConnectorId() < 1)
+                    || params.getChargePointSelectList().size() != 1)) {
+            throw new SteveException("TxProfile should only be set at Charge Point ConnectorId > 0 on one charge box");
         }
 
+        if (ChargingProfilePurposeType.TX_PROFILE == purpose
+                && isNull(params.getTransactionId())) {
+            // transactionId not set, get it from DB
+            params.setTransactionId(getActiveTransactionID(params));
+            // still null (no active transation on this connector) throw exception
+            if (isNull(params.getTransactionId())){
+                throw new SteveException("transaction id is required for TxProfile");
+            }
+        }
+
+        if (ChargingProfilePurposeType.TX_PROFILE != purpose
+                && params.getTransactionId() != null) {
+            throw new SteveException("transaction id should only be set for TxProfile");
+        }
+    }
+
+    private Integer getActiveTransactionID(SetChargingProfileParams params) {
+
+        // get(0) Okay, because checkAdditionalConstraints throws exeption if there not exactly one ChargeBox!
+        String chargeBoxID = params.getChargePointSelectList().get(0).getChargeBoxId();
+
+        Integer connectorID = params.getConnectorId();
+        return transactionRepository.getActiveTransactionId(chargeBoxID, connectorID);
     }
 }

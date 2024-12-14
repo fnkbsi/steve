@@ -36,6 +36,9 @@ import ocpp.cp._2015._10.SetChargingProfileRequest;
 import jakarta.xml.ws.AsyncHandler;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.joda.time.DateTime;
+
+import static java.util.Objects.isNull;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -52,6 +55,15 @@ public class SetChargingProfileTask extends Ocpp16AndAboveTask<EnhancedSetChargi
         this.chargingProfileRepository = chargingProfileRepository;
     }
 
+
+    public SetChargingProfileTask(OcppVersion ocppVersion,
+                                  EnhancedSetChargingProfileParams params,
+                                  ChargingProfileRepository chargingProfileRepository,
+                                  String caller) {
+        super(ocppVersion, params, caller);
+        this.chargingProfileRepository = chargingProfileRepository;
+    }
+
     @Override
     public OcppCallback<String> defaultCallback() {
         return new DefaultOcppCallback<String>() {
@@ -59,7 +71,9 @@ public class SetChargingProfileTask extends Ocpp16AndAboveTask<EnhancedSetChargi
             public void success(String chargeBoxId, String statusValue) {
                 addNewResponse(chargeBoxId, statusValue);
 
-                if ("Accepted".equalsIgnoreCase(statusValue)) {
+                // if the ChargeBox accepted the Profile notice this in the DB, except it's a TxProfile
+                Boolean isTxProfile =  params.getDetails().getProfile().getChargingProfilePurpose().contains("TxProfile");
+                if ("Accepted".equalsIgnoreCase(statusValue) && !isTxProfile) {
                     int chargingProfilePk = params.getDetails().getProfile().getChargingProfilePk();
                     int connectorId = params.getDelegate().getConnectorId();
                     chargingProfileRepository.setProfile(chargingProfilePk, chargeBoxId, connectorId);
@@ -71,6 +85,12 @@ public class SetChargingProfileTask extends Ocpp16AndAboveTask<EnhancedSetChargi
     @Override
     public ocpp.cp._2015._10.SetChargingProfileRequest getOcpp16Request() {
         ChargingProfileRecord profile = params.getDetails().getProfile();
+
+        // if it's a TxProfile which misses the StartSchedule, then add the actual time as StartSchedule
+        ChargingProfilePurposeType purpose = ChargingProfilePurposeType.fromValue(profile.getChargingProfilePurpose());
+        if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(profile.getStartSchedule())){
+            profile.setStartSchedule(DateTime.now());
+        }
 
         List<ChargingSchedulePeriod> schedulePeriods =
                 params.getDetails().getPeriods()
@@ -93,8 +113,9 @@ public class SetChargingProfileTask extends Ocpp16AndAboveTask<EnhancedSetChargi
 
         ChargingProfile ocppProfile = new ChargingProfile()
                 .withChargingProfileId(profile.getChargingProfilePk())
+                .withTransactionId(params.getDelegate().getTransactionId())
                 .withStackLevel(profile.getStackLevel())
-                .withChargingProfilePurpose(ChargingProfilePurposeType.fromValue(profile.getChargingProfilePurpose()))
+                .withChargingProfilePurpose(purpose)
                 .withChargingProfileKind(ChargingProfileKindType.fromValue(profile.getChargingProfileKind()))
                 .withRecurrencyKind(profile.getRecurrencyKind() == null ? null : RecurrencyKindType.fromValue(profile.getRecurrencyKind()))
                 .withValidFrom(profile.getValidFrom())

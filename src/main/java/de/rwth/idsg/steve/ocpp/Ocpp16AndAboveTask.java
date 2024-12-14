@@ -34,6 +34,10 @@ public abstract class Ocpp16AndAboveTask<S extends ChargePointSelection, RESPONS
         super(ocppVersion, params);
     }
 
+    public Ocpp16AndAboveTask(OcppVersion ocppVersion, S params, String caller) {
+        super(ocppVersion, params, caller);
+    }
+
     @Deprecated
     @Override
     public <T extends RequestType> T getOcpp15Request() {

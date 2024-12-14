@@ -18,6 +18,7 @@
  */
 package de.rwth.idsg.steve.web.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -42,44 +43,59 @@ import java.util.Objects;
  * @author Sevket Goekay <sevketgokay@gmail.com>
  * @since 12.11.2018
  */
+
 @Getter
 @Setter
 @ToString
 public class ChargingProfileForm {
 
     // Internal database id
+    @Schema(description = "Charging Profile Pk")
     private Integer chargingProfilePk;
 
+    @Schema(description = "Charging Profile description")
     private String description;
+    @Schema(description = "Charging Profile note")
     private String note;
 
+    @Schema(description = "Charging Profile Stack Level")
     @NotNull(message = "Stack Level has to be set")
     @PositiveOrZero(message = "Stack Level has to be a positive number or 0")
     private Integer stackLevel;
 
+    @Schema(description = "Charging Profile Purpose")
     @NotNull(message = "Charging Profile Purpose has to be set")
     private ChargingProfilePurposeType chargingProfilePurpose;
 
+    @Schema(description = "Charging Profile Kind")
     @NotNull(message = "Charging Profile Kind has to be set")
     private ChargingProfileKindType chargingProfileKind;
 
+    @Schema(description = "Recurrency Kind")
     private RecurrencyKindType recurrencyKind;
 
+    @Schema(description = "Starttime of the Profile")
     private LocalDateTime validFrom;
 
+    @Schema(description = "Endtime of the Profile")
     @Future(message = "Valid To must be in future")
     private LocalDateTime validTo;
 
+    @Schema(description = "Profile duration")
     @Positive(message = "Duration has to be a positive number")
     private Integer durationInSeconds;
 
+    @Schema(description = "Schedule Start")
     private LocalDateTime startSchedule;
 
+    @Schema(description = "Charging Rate Unit")
     @NotNull(message = "Charging Rate Unit has to be set")
     private ChargingRateUnitType chargingRateUnit;
 
+    @Schema(description = "Minimum Charging Rate")
     private BigDecimal minChargingRate;
 
+    @Schema(description = "Schedule Periods")
     @NotEmpty(message = "Schedule Periods cannot be empty")
     @Valid
     private Map<String, SchedulePeriod> schedulePeriodMap;
@@ -122,14 +138,18 @@ public class ChargingProfileForm {
     @ToString
     public static class SchedulePeriod {
 
+        @Schema(description = "Schedule period default number of phases")
         private static final int defaultNumberPhases = 3;
 
+        @Schema(description = "Schedule Period Start")
         @NotNull(message = "Schedule period: Start Period has to be set")
         private Integer startPeriodInSeconds; // from the startSchedule
 
+        @Schema(description = "Schedule period power limit")
         @NotNull(message = "Schedule period: Power Limit has to be set")
         private BigDecimal powerLimit;
 
+        @Schema(description = "Schedule period number phases")
         private Integer numberPhases;
 
         public Integer getNumberPhases() {
