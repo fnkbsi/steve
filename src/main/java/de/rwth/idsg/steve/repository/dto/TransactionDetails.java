@@ -18,6 +18,7 @@
  */
 package de.rwth.idsg.steve.repository.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jooq.steve.db.tables.records.TransactionStartRecord;
 import lombok.Builder;
 import lombok.Getter;
@@ -41,6 +42,7 @@ public class TransactionDetails {
      * Subsequent transaction's start event (to the transaction that we give details about),
      * that is at the same chargebox and connector
      */
+    @JsonIgnore
     @Nullable
     private final TransactionStartRecord nextTransactionStart;
 
