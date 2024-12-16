@@ -40,6 +40,17 @@
             <tr><td>Stop Event Actor</td><td>${details.transaction.stopEventActor}</td></tr>
         </table>
     </center>
+    
+    <form:form action="${ctxPath}/manager/transactions/detailsxls" method="get" modelAttribute="params">
+        <table class="userInput">
+            <tr>
+                <td><form:hidden path="transactionPk" value= "${details.transaction.id}" /></td>
+                <td id="add_space">
+                    <input type="submit" value="Get CSV">
+                </td>
+            </tr>
+        </table>
+    </form:form>
     <br>
     <section><span>Intermediate Meter Values</span></section>
     <table class="res">

@@ -33,6 +33,7 @@ public interface TransactionRepository {
     List<Transaction> getTransactions(TransactionQueryForm form);
 
     void writeTransactionsCSV(TransactionQueryForm form, Writer writer);
+    void writeTransactionsDetailsCSV(int transactionPk, Writer writer);
 
     List<Integer> getActiveTransactionIds(String chargeBoxId);
 

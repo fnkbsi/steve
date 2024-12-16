@@ -51,6 +51,7 @@ import static jooq.steve.db.tables.ConnectorMeterValue.CONNECTOR_METER_VALUE;
 import static jooq.steve.db.tables.OcppTag.OCPP_TAG;
 import static jooq.steve.db.tables.Transaction.TRANSACTION;
 import static jooq.steve.db.tables.TransactionStart.TRANSACTION_START;
+import org.jooq.Record8;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -76,6 +77,45 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     public void writeTransactionsCSV(TransactionQueryForm form, Writer writer) {
         getInternalCSV(form).fetch()
                             .formatCSV(writer);
+    }
+
+    @Override
+    public void writeTransactionsDetailsCSV(int transactionPk, Writer writer) {
+
+        // write a few information about the transaction
+        TransactionQueryForm form = new TransactionQueryForm();
+        form.setTransactionPk(transactionPk);
+        form.setType(TransactionQueryForm.QueryType.ALL);
+        form.setPeriodType(TransactionQueryForm.QueryPeriodType.ALL);
+
+        //getInternalCSV(form).fetch().formatCSV(writer);
+
+        Record12<Integer, String, Integer, String, DateTime, String,
+                DateTime, String, String, Integer, Integer, TransactionStopEventActor> res;
+
+        res = getInternal(form).fetchOne();
+        if (res == null) {
+            throw new SteveException("There is no transaction with id '%s'", transactionPk);
+        }
+
+        res.formatCSV(writer);
+        // a nicer format for the 'csv header' / transaction informations
+//        try {
+//            for (int i=0;i<res.size();i++)
+//            {
+//                String val_str = res.getValue(i) !=null ? res.getValue(i).toString() : "null";
+//                writer.append(res.field(i).getName() + "," + val_str + "\n");
+//            }
+//            writer.append("\n");
+//        } catch (IOException ex) {
+//            Logger.getLogger(TransactionRepositoryImpl.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+
+        Transaction transaction = new TransactionMapper().map(res);
+
+        TransactionStartRecord nextTx = null;
+
+        getDetailsQuery(transaction, nextTx).fetch().formatCSV(writer);
     }
 
     @Override
@@ -213,6 +253,109 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                    .toList();
 
         return new TransactionDetails(new TransactionMapper().map(transaction), values, nextTx);
+    }
+
+private SelectQuery<Record8<DateTime, String, String, String, String, String, String, String>>
+        getDetailsQuery(Transaction transaction, TransactionStartRecord nextTx) {
+
+//        // -------------------------------------------------------------------------
+//        // Step 1a: Collect general data about transaction
+//        // -------------------------------------------------------------------------
+//
+
+        Integer transactionPk = transaction.getId();
+        DateTime startTimestamp = transaction.getStartTimestamp();
+        DateTime stopTimestamp = transaction.getStopTimestamp();
+        String stopValue = transaction.getStopValue();
+        String chargeBoxId = transaction.getChargeBoxId();
+        int connectorId = transaction.getConnectorId();
+
+        // -------------------------------------------------------------------------
+        // Step 2: Collect intermediate meter values
+        // -------------------------------------------------------------------------
+
+        Condition timestampCondition;
+        //TransactionStartRecord nextTx = null;
+
+        if (stopTimestamp == null && stopValue == null) {
+
+            // https://github.com/steve-community/steve/issues/97
+            //
+            // handle "zombie" transaction, for which we did not receive any StopTransaction. if we do not handle it,
+            // meter values for all subsequent transactions at this chargebox and connector will be falsely attributed
+            // to this zombie transaction.
+            //
+            // "what is the subsequent transaction at the same chargebox and connector?"
+            nextTx = ctx.selectFrom(TRANSACTION_START)
+                        .where(TRANSACTION_START.CONNECTOR_PK.eq(ctx.select(CONNECTOR.CONNECTOR_PK)
+                                                                    .from(CONNECTOR)
+                                                                    .where(CONNECTOR.CHARGE_BOX_ID.equal(chargeBoxId))
+                                                                    .and(CONNECTOR.CONNECTOR_ID.equal(connectorId))))
+                        .and(TRANSACTION_START.START_TIMESTAMP.greaterThan(startTimestamp))
+                        .orderBy(TRANSACTION_START.START_TIMESTAMP)
+                        .limit(1)
+                        .fetchOne();
+
+            if (nextTx == null) {
+                // the last active transaction
+                timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP.greaterOrEqual(startTimestamp);
+            } else {
+                timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP
+                        .between(startTimestamp, nextTx.getStartTimestamp());
+            }
+        } else {
+            // finished transaction
+            timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP.between(startTimestamp, stopTimestamp);
+        }
+
+        // https://github.com/steve-community/steve/issues/1514 --> only relevant MeterValues (but all relevant for IFS)
+        //Condition unitCondition = CONNECTOR_METER_VALUE.UNIT.isNull()
+        //    .or(CONNECTOR_METER_VALUE.UNIT.in("", UnitOfMeasure.WH.value(), UnitOfMeasure.K_WH.value()));
+
+        // Case 1: Ideal and most accurate case. Station sends meter values with transaction id set.
+        //
+        SelectQuery<ConnectorMeterValueRecord> transactionQuery =
+                ctx.selectFrom(CONNECTOR_METER_VALUE)
+                   .where(CONNECTOR_METER_VALUE.TRANSACTION_PK.eq(transactionPk))
+                   //.and(unitCondition)
+                   .getQuery();
+
+        // Case 2: Fall back to filtering according to time windows
+        //
+        SelectQuery<ConnectorMeterValueRecord> timestampQuery =
+                ctx.selectFrom(CONNECTOR_METER_VALUE)
+                   .where(CONNECTOR_METER_VALUE.CONNECTOR_PK.eq(ctx.select(CONNECTOR.CONNECTOR_PK)
+                                                                   .from(CONNECTOR)
+                                                                   .where(CONNECTOR.CHARGE_BOX_ID.eq(chargeBoxId))
+                                                                   .and(CONNECTOR.CONNECTOR_ID.eq(connectorId))))
+                   .and(timestampCondition)
+                   //.and(unitCondition)
+                   .getQuery();
+
+        // Actually, either case 1 applies or 2. If we retrieved values using 1, case 2 is should not be
+        // executed (best case). In worst case (1 returns empty list and we fall back to case 2) though,
+        // we make two db calls. Alternatively, we can pass both queries in one go, and make the db work.
+        //
+        // UNION removes all duplicate records
+        //
+        Table<ConnectorMeterValueRecord> t1 = transactionQuery.union(timestampQuery).asTable("t1");
+        
+        Field<DateTime> dateTimeField = t1.field(2, DateTime.class);
+
+
+        return ctx.select(
+                    dateTimeField,
+                    t1.field(3, String.class),
+                    t1.field(4, String.class),
+                    t1.field(5, String.class),
+                    t1.field(6, String.class),
+                    t1.field(7, String.class),
+                    t1.field(8, String.class),
+                    t1.field(9, String.class))
+               .from(t1)
+               //.orderBy(dateTimeField)
+                .orderBy(t1.field(6)) // sort by measurands
+            .getQuery();
     }
 
     // -------------------------------------------------------------------------
