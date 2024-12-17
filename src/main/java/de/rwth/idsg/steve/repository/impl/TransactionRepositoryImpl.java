@@ -112,10 +112,9 @@ public class TransactionRepositoryImpl implements TransactionRepository {
 //        }
 
         Transaction transaction = new TransactionMapper().map(res);
-
         TransactionStartRecord nextTx = null;
 
-        getDetailsQuery(transaction, nextTx).fetch().formatCSV(writer);
+        getDetailsQuery(transaction, nextTx, false).fetch().formatCSV(writer);
     }
 
     @Override
@@ -142,101 +141,17 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         form.setPeriodType(TransactionQueryForm.QueryPeriodType.ALL);
 
         Record12<Integer, String, Integer, String, DateTime, String, DateTime, String, String, Integer, Integer, TransactionStopEventActor>
-                transaction = getInternal(form).fetchOne();
+                transactionRec = getInternal(form).fetchOne();
 
-        if (transaction == null) {
+        if (transactionRec == null) {
             throw new SteveException("There is no transaction with id '%s'", transactionPk);
         }
-
-        DateTime startTimestamp = transaction.value5();
-        DateTime stopTimestamp = transaction.value7();
-        String stopValue = transaction.value8();
-        String chargeBoxId = transaction.value2();
-        int connectorId = transaction.value3();
-
-        // -------------------------------------------------------------------------
-        // Step 2: Collect intermediate meter values
-        // -------------------------------------------------------------------------
-
-        Condition timestampCondition;
+        Transaction transaction = new TransactionMapper().map(transactionRec);
         TransactionStartRecord nextTx = null;
-
-        if (stopTimestamp == null && stopValue == null) {
-
-            // https://github.com/steve-community/steve/issues/97
-            //
-            // handle "zombie" transaction, for which we did not receive any StopTransaction. if we do not handle it,
-            // meter values for all subsequent transactions at this chargebox and connector will be falsely attributed
-            // to this zombie transaction.
-            //
-            // "what is the subsequent transaction at the same chargebox and connector?"
-            nextTx = ctx.selectFrom(TRANSACTION_START)
-                        .where(TRANSACTION_START.CONNECTOR_PK.eq(ctx.select(CONNECTOR.CONNECTOR_PK)
-                                                                    .from(CONNECTOR)
-                                                                    .where(CONNECTOR.CHARGE_BOX_ID.equal(chargeBoxId))
-                                                                    .and(CONNECTOR.CONNECTOR_ID.equal(connectorId))))
-                        .and(TRANSACTION_START.START_TIMESTAMP.greaterThan(startTimestamp))
-                        .orderBy(TRANSACTION_START.START_TIMESTAMP)
-                        .limit(1)
-                        .fetchOne();
-
-            if (nextTx == null) {
-                // the last active transaction
-                timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP.greaterOrEqual(startTimestamp);
-            } else {
-                timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP.between(startTimestamp, nextTx.getStartTimestamp());
-            }
-        } else {
-            // finished transaction
-            timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP.between(startTimestamp, stopTimestamp);
-        }
-
-        // https://github.com/steve-community/steve/issues/1514
-        Condition unitCondition = CONNECTOR_METER_VALUE.UNIT.isNull()
-            .or(CONNECTOR_METER_VALUE.UNIT.in("", UnitOfMeasure.WH.value(), UnitOfMeasure.K_WH.value()));
-
-        // Case 1: Ideal and most accurate case. Station sends meter values with transaction id set.
-        //
-        SelectQuery<ConnectorMeterValueRecord> transactionQuery =
-                ctx.selectFrom(CONNECTOR_METER_VALUE)
-                   .where(CONNECTOR_METER_VALUE.TRANSACTION_PK.eq(transactionPk))
-                   .and(unitCondition)
-                   .getQuery();
-
-        // Case 2: Fall back to filtering according to time windows
-        //
-        SelectQuery<ConnectorMeterValueRecord> timestampQuery =
-                ctx.selectFrom(CONNECTOR_METER_VALUE)
-                   .where(CONNECTOR_METER_VALUE.CONNECTOR_PK.eq(ctx.select(CONNECTOR.CONNECTOR_PK)
-                                                                   .from(CONNECTOR)
-                                                                   .where(CONNECTOR.CHARGE_BOX_ID.eq(chargeBoxId))
-                                                                   .and(CONNECTOR.CONNECTOR_ID.eq(connectorId))))
-                   .and(timestampCondition)
-                   .and(unitCondition)
-                   .getQuery();
-
-        // Actually, either case 1 applies or 2. If we retrieved values using 1, case 2 is should not be
-        // executed (best case). In worst case (1 returns empty list and we fall back to case 2) though,
-        // we make two db calls. Alternatively, we can pass both queries in one go, and make the db work.
-        //
-        // UNION removes all duplicate records
-        //
-        Table<ConnectorMeterValueRecord> t1 = transactionQuery.union(timestampQuery).asTable("t1");
-
-        Field<DateTime> dateTimeField = t1.field(2, DateTime.class);
+      
 
         List<TransactionDetails.MeterValues> values =
-                ctx.select(
-                        dateTimeField,
-                        t1.field(3, String.class),
-                        t1.field(4, String.class),
-                        t1.field(5, String.class),
-                        t1.field(6, String.class),
-                        t1.field(7, String.class),
-                        t1.field(8, String.class),
-                        t1.field(9, String.class))
-                   .from(t1)
-                   .orderBy(dateTimeField)
+                getDetailsQuery(transaction, nextTx, true)
                    .fetch()
                    .map(r -> TransactionDetails.MeterValues.builder()
                                                            .valueTimestamp(r.value1())
@@ -252,11 +167,11 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                    .filter(TransactionStopServiceHelper::isEnergyValue)
                    .toList();
 
-        return new TransactionDetails(new TransactionMapper().map(transaction), values, nextTx);
+        return new TransactionDetails(new TransactionMapper().map(transactionRec), values, nextTx);
     }
 
 private SelectQuery<Record8<DateTime, String, String, String, String, String, String, String>>
-        getDetailsQuery(Transaction transaction, TransactionStartRecord nextTx) {
+        getDetailsQuery(Transaction transaction, TransactionStartRecord nextTx, boolean onlyEnergyValues) {
 
 //        // -------------------------------------------------------------------------
 //        // Step 1a: Collect general data about transaction
@@ -275,7 +190,6 @@ private SelectQuery<Record8<DateTime, String, String, String, String, String, St
         // -------------------------------------------------------------------------
 
         Condition timestampCondition;
-        //TransactionStartRecord nextTx = null;
 
         if (stopTimestamp == null && stopValue == null) {
 
@@ -308,16 +222,15 @@ private SelectQuery<Record8<DateTime, String, String, String, String, String, St
             timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP.between(startTimestamp, stopTimestamp);
         }
 
-        // https://github.com/steve-community/steve/issues/1514 --> only relevant MeterValues (but all relevant for IFS)
-        //Condition unitCondition = CONNECTOR_METER_VALUE.UNIT.isNull()
-        //    .or(CONNECTOR_METER_VALUE.UNIT.in("", UnitOfMeasure.WH.value(), UnitOfMeasure.K_WH.value()));
+        // https://github.com/steve-community/steve/issues/1514
+        Condition unitCondition = CONNECTOR_METER_VALUE.UNIT.isNull()
+            .or(CONNECTOR_METER_VALUE.UNIT.in("", UnitOfMeasure.WH.value(), UnitOfMeasure.K_WH.value()));
 
         // Case 1: Ideal and most accurate case. Station sends meter values with transaction id set.
         //
         SelectQuery<ConnectorMeterValueRecord> transactionQuery =
                 ctx.selectFrom(CONNECTOR_METER_VALUE)
                    .where(CONNECTOR_METER_VALUE.TRANSACTION_PK.eq(transactionPk))
-                   //.and(unitCondition)
                    .getQuery();
 
         // Case 2: Fall back to filtering according to time windows
@@ -329,9 +242,12 @@ private SelectQuery<Record8<DateTime, String, String, String, String, String, St
                                                                    .where(CONNECTOR.CHARGE_BOX_ID.eq(chargeBoxId))
                                                                    .and(CONNECTOR.CONNECTOR_ID.eq(connectorId))))
                    .and(timestampCondition)
-                   //.and(unitCondition)
                    .getQuery();
 
+        if (onlyEnergyValues) {
+            transactionQuery.addConditions(unitCondition);
+            timestampQuery.addConditions(unitCondition);
+        }
         // Actually, either case 1 applies or 2. If we retrieved values using 1, case 2 is should not be
         // executed (best case). In worst case (1 returns empty list and we fall back to case 2) though,
         // we make two db calls. Alternatively, we can pass both queries in one go, and make the db work.
