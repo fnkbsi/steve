@@ -51,6 +51,7 @@ import static jooq.steve.db.tables.ConnectorMeterValue.CONNECTOR_METER_VALUE;
 import static jooq.steve.db.tables.OcppTag.OCPP_TAG;
 import static jooq.steve.db.tables.Transaction.TRANSACTION;
 import static jooq.steve.db.tables.TransactionStart.TRANSACTION_START;
+import org.jooq.Record8;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -85,6 +86,44 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     public void writeTransactionsCSV(TransactionQueryForm form, Writer writer) {
         getInternalCSV(form).fetch()
                             .formatCSV(writer);
+    }
+
+    @Override
+    public void writeTransactionsDetailsCSV(int transactionPk, Writer writer) {
+
+        // write a few information about the transaction
+        TransactionQueryForm form = new TransactionQueryForm();
+        form.setTransactionPk(transactionPk);
+        form.setType(TransactionQueryForm.QueryType.ALL);
+        form.setPeriodType(TransactionQueryForm.QueryPeriodType.ALL);
+
+        //getInternalCSV(form).fetch().formatCSV(writer);
+
+        Record12<Integer, String, Integer, String, DateTime, String,
+                DateTime, String, String, Integer, Integer, TransactionStopEventActor> res;
+
+        res = getInternal(form).fetchOne();
+        if (res == null) {
+            throw new SteveException("There is no transaction with id '%s'", transactionPk);
+        }
+
+        res.formatCSV(writer);
+        // a nicer format for the 'csv header' / transaction informations
+//        try {
+//            for (int i=0;i<res.size();i++)
+//            {
+//                String val_str = res.getValue(i) !=null ? res.getValue(i).toString() : "null";
+//                writer.append(res.field(i).getName() + "," + val_str + "\n");
+//            }
+//            writer.append("\n");
+//        } catch (IOException ex) {
+//            Logger.getLogger(TransactionRepositoryImpl.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+
+        Transaction transaction = new TransactionMapper().map(res);
+        TransactionStartRecord nextTx = null;
+
+        getDetailsQuery(transaction, nextTx, false).fetch().formatCSV(writer);
     }
 
     @Override
@@ -124,24 +163,55 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         form.setPeriodType(TransactionQueryForm.QueryPeriodType.ALL);
 
         Record12<Integer, String, Integer, String, DateTime, String, DateTime, String, String, Integer, Integer, TransactionStopEventActor>
-                transaction = getInternal(form).fetchOne();
+                transactionRec = getInternal(form).fetchOne();
 
-        if (transaction == null) {
+        if (transactionRec == null) {
             throw new SteveException("There is no transaction with id '%s'", transactionPk);
         }
+        Transaction transaction = new TransactionMapper().map(transactionRec);
+        TransactionStartRecord nextTx = null;
+      
 
-        DateTime startTimestamp = transaction.value5();
-        DateTime stopTimestamp = transaction.value7();
-        String stopValue = transaction.value8();
-        String chargeBoxId = transaction.value2();
-        int connectorId = transaction.value3();
+        List<TransactionDetails.MeterValues> values =
+                getDetailsQuery(transaction, nextTx, true)
+                   .fetch()
+                   .map(r -> TransactionDetails.MeterValues.builder()
+                                                           .valueTimestamp(r.value1())
+                                                           .value(r.value2())
+                                                           .readingContext(r.value3())
+                                                           .format(r.value4())
+                                                           .measurand(r.value5())
+                                                           .location(r.value6())
+                                                           .unit(r.value7())
+                                                           .phase(r.value8())
+                                                           .build())
+                   .stream()
+                   .filter(TransactionStopServiceHelper::isEnergyValue)
+                   .toList();
+
+        return new TransactionDetails(new TransactionMapper().map(transactionRec), values, nextTx);
+    }
+
+private SelectQuery<Record8<DateTime, String, String, String, String, String, String, String>>
+        getDetailsQuery(Transaction transaction, TransactionStartRecord nextTx, boolean onlyEnergyValues) {
+
+//        // -------------------------------------------------------------------------
+//        // Step 1a: Collect general data about transaction
+//        // -------------------------------------------------------------------------
+//
+
+        Integer transactionPk = transaction.getId();
+        DateTime startTimestamp = transaction.getStartTimestamp();
+        DateTime stopTimestamp = transaction.getStopTimestamp();
+        String stopValue = transaction.getStopValue();
+        String chargeBoxId = transaction.getChargeBoxId();
+        int connectorId = transaction.getConnectorId();
 
         // -------------------------------------------------------------------------
         // Step 2: Collect intermediate meter values
         // -------------------------------------------------------------------------
 
         Condition timestampCondition;
-        TransactionStartRecord nextTx = null;
 
         if (stopTimestamp == null && stopValue == null) {
 
@@ -166,7 +236,8 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                 // the last active transaction
                 timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP.greaterOrEqual(startTimestamp);
             } else {
-                timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP.between(startTimestamp, nextTx.getStartTimestamp());
+                timestampCondition = CONNECTOR_METER_VALUE.VALUE_TIMESTAMP
+                        .between(startTimestamp, nextTx.getStartTimestamp());
             }
         } else {
             // finished transaction
@@ -182,7 +253,6 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         SelectQuery<ConnectorMeterValueRecord> transactionQuery =
                 ctx.selectFrom(CONNECTOR_METER_VALUE)
                    .where(CONNECTOR_METER_VALUE.TRANSACTION_PK.eq(transactionPk))
-                   .and(unitCondition)
                    .getQuery();
 
         // Case 2: Fall back to filtering according to time windows
@@ -194,9 +264,12 @@ public class TransactionRepositoryImpl implements TransactionRepository {
                                                                    .where(CONNECTOR.CHARGE_BOX_ID.eq(chargeBoxId))
                                                                    .and(CONNECTOR.CONNECTOR_ID.eq(connectorId))))
                    .and(timestampCondition)
-                   .and(unitCondition)
                    .getQuery();
 
+        if (onlyEnergyValues) {
+            transactionQuery.addConditions(unitCondition);
+            timestampQuery.addConditions(unitCondition);
+        }
         // Actually, either case 1 applies or 2. If we retrieved values using 1, case 2 is should not be
         // executed (best case). In worst case (1 returns empty list and we fall back to case 2) though,
         // we make two db calls. Alternatively, we can pass both queries in one go, and make the db work.
@@ -204,37 +277,23 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         // UNION removes all duplicate records
         //
         Table<ConnectorMeterValueRecord> t1 = transactionQuery.union(timestampQuery).asTable("t1");
-
+        
         Field<DateTime> dateTimeField = t1.field(2, DateTime.class);
 
-        List<TransactionDetails.MeterValues> values =
-                ctx.select(
-                        dateTimeField,
-                        t1.field(3, String.class),
-                        t1.field(4, String.class),
-                        t1.field(5, String.class),
-                        t1.field(6, String.class),
-                        t1.field(7, String.class),
-                        t1.field(8, String.class),
-                        t1.field(9, String.class))
-                   .from(t1)
-                   .orderBy(dateTimeField)
-                   .fetch()
-                   .map(r -> TransactionDetails.MeterValues.builder()
-                                                           .valueTimestamp(r.value1())
-                                                           .value(r.value2())
-                                                           .readingContext(r.value3())
-                                                           .format(r.value4())
-                                                           .measurand(r.value5())
-                                                           .location(r.value6())
-                                                           .unit(r.value7())
-                                                           .phase(r.value8())
-                                                           .build())
-                   .stream()
-                   .filter(TransactionStopServiceHelper::isEnergyValue)
-                   .toList();
 
-        return new TransactionDetails(new TransactionMapper().map(transaction), values, nextTx);
+        return ctx.select(
+                    dateTimeField,
+                    t1.field(3, String.class),
+                    t1.field(4, String.class),
+                    t1.field(5, String.class),
+                    t1.field(6, String.class),
+                    t1.field(7, String.class),
+                    t1.field(8, String.class),
+                    t1.field(9, String.class))
+               .from(t1)
+               //.orderBy(dateTimeField)
+                .orderBy(t1.field(6)) // sort by measurands
+            .getQuery();
     }
 
     // -------------------------------------------------------------------------
