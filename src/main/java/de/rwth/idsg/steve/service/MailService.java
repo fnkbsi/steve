@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
@@ -35,6 +34,7 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.Lock;
@@ -55,31 +55,8 @@ public class MailService {
     @Autowired private SettingsRepository settingsRepository;
     @Autowired private ScheduledExecutorService executorService;
 
-    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-    private final Lock readLock = readWriteLock.readLock();
-    private final Lock writeLock = readWriteLock.writeLock();
-
-    private MailSettings settings;
-    private Session session;
-
-    @PostConstruct
-    public void loadSettingsFromDB() {
-        writeLock.lock();
-        try {
-            settings = settingsRepository.getMailSettings();
-        } finally {
-            writeLock.unlock();
-        }
-        session = createSession(getSettings());
-    }
-
     public MailSettings getSettings() {
-        readLock.lock();
-        try {
-            return this.settings;
-        } finally {
-            readLock.unlock();
-        }
+        return settingsRepository.getMailSettings();
     }
 
     public void sendTestMail() {
@@ -112,7 +89,8 @@ public class MailService {
 
     private void send(String subject, String body, String recipientAddresses) throws MessagingException {
         MailSettings settingsLocal = getSettings();
-
+		Session session = createSession(getSettings());
+		
         Message mail = new MimeMessage(session);
         mail.setSubject("[SteVe] " + subject);
         mail.setContent(body, "text/plain");
