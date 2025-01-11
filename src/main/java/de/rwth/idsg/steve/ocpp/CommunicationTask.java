@@ -73,8 +73,8 @@ public abstract class CommunicationTask<S extends ChargePointSelection, RESPONSE
         this(params, TaskOrigin.INTERNAL, "SteVe");
     }
 
-    public CommunicationTask(OcppVersion ocppVersion, S params, String caller) {
-        this(ocppVersion, params, TaskOrigin.EXTERNAL, caller);
+    public CommunicationTask(S params, String caller) {
+        this(params, TaskOrigin.EXTERNAL, caller);
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
  * SteVe - SteckdosenVerwaltung - https://github.com/steve-community/steve
- * Copyright (C) 2013-2024 SteVe Community Team
+ * Copyright (C) 2013-2025 SteVe Community Team
  * All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,14 +18,12 @@
  */
 package de.rwth.idsg.steve.web.api;
 
-import de.rwth.idsg.steve.ocpp.OcppVersion;
 import de.rwth.idsg.steve.ocpp.TaskOrigin;
 import de.rwth.idsg.steve.ocpp.CommunicationTask;
 import de.rwth.idsg.steve.ocpp.task.RemoteStartTransactionTask;
 import de.rwth.idsg.steve.repository.TaskStore;
 import de.rwth.idsg.steve.repository.dto.TaskOverview;
 import de.rwth.idsg.steve.web.dto.ocpp.RemoteStartTransactionParams;
-//import de.rwth.idsg.steve.web.api.dto.ApiTaskList;
 
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
@@ -34,12 +32,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 
@@ -47,10 +43,7 @@ import java.util.List;
 
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.InjectMocks;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -135,7 +128,7 @@ public class TaskRestControllerTest extends AbstractControllerTest {
 
         RemoteStartTransactionParams params = new RemoteStartTransactionParams();
 
-        CommunicationTask results = new RemoteStartTransactionTask(OcppVersion.V_16, params, "Test3");
+        CommunicationTask results = new RemoteStartTransactionTask(params, "Test3");
 
         // when
         when(taskStore.get(anyInt())).thenReturn(results);
