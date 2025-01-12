@@ -417,12 +417,27 @@ public class ChargePointServiceClient {
     @SafeVarargs
     public final int setChargingProfile(SetChargingProfileParams params,
                                         OcppCallback<String>... callbacks) {
-        ChargingProfile.Details details = chargingProfileRepository.getDetails(params.getChargingProfilePk());
-
-        checkAdditionalConstraints(params, details);
-
-        EnhancedSetChargingProfileParams enhancedParams = new EnhancedSetChargingProfileParams(params, details);
+        EnhancedSetChargingProfileParams enhancedParams = getEnhancedParams(params);
         SetChargingProfileTask task = new SetChargingProfileTask(enhancedParams, chargingProfileRepository);
+
+        for (var callback : callbacks) {
+            task.addCallback(callback);
+        }
+
+        BackgroundService.with(executorService)
+            .forEach(task.getParams().getChargePointSelectList())
+            .execute(c -> invoker.setChargingProfile(c, task));
+
+        return taskStore.add(task);
+
+    }
+
+    // set charging profile with caller
+    @SafeVarargs
+    public final int setChargingProfile(SetChargingProfileParams params, String caller,
+                                        OcppCallback<String>... callbacks) {
+        EnhancedSetChargingProfileParams enhancedParams = getEnhancedParams(params);
+        SetChargingProfileTask task = new SetChargingProfileTask(enhancedParams, chargingProfileRepository, caller);
 
         for (var callback : callbacks) {
             task.addCallback(callback);
@@ -451,10 +466,44 @@ public class ChargePointServiceClient {
         return taskStore.add(task);
     }
 
+    // set charging profile with caller
+    @SafeVarargs
+    public final int clearChargingProfile(ClearChargingProfileParams params, String caller,
+                                          OcppCallback<String>... callbacks) {
+        ClearChargingProfileTask task = new ClearChargingProfileTask(params, chargingProfileRepository, caller);
+
+        for (var callback : callbacks) {
+            task.addCallback(callback);
+        }
+
+        BackgroundService.with(executorService)
+            .forEach(task.getParams().getChargePointSelectList())
+            .execute(c -> invoker.clearChargingProfile(c, task));
+
+        return taskStore.add(task);
+    }
+
     @SafeVarargs
     public final int getCompositeSchedule(GetCompositeScheduleParams params,
                                           OcppCallback<GetCompositeScheduleResponse>... callbacks) {
         GetCompositeScheduleTask task = new GetCompositeScheduleTask(params);
+
+        for (var callback : callbacks) {
+            task.addCallback(callback);
+        }
+
+        BackgroundService.with(executorService)
+            .forEach(task.getParams().getChargePointSelectList())
+            .execute(c -> invoker.getCompositeSchedule(c, task));
+
+        return taskStore.add(task);
+    }
+
+    // set charging profile with caller
+    @SafeVarargs
+    public final int getCompositeSchedule(GetCompositeScheduleParams params, String caller,
+                                          OcppCallback<GetCompositeScheduleResponse>... callbacks) {
+        GetCompositeScheduleTask task = new GetCompositeScheduleTask(params, caller);
 
         for (var callback : callbacks) {
             task.addCallback(callback);
@@ -484,5 +533,13 @@ public class ChargePointServiceClient {
             && params.getConnectorId() < 1) {
             throw new SteveException("TxProfile should only be set at Charge Point ConnectorId > 0");
         }
+    }
+
+    public EnhancedSetChargingProfileParams getEnhancedParams(SetChargingProfileParams params) {
+        ChargingProfile.Details details = chargingProfileRepository.getDetails(params.getChargingProfilePk());
+
+        checkAdditionalConstraints(params, details);
+
+        return new EnhancedSetChargingProfileParams(params, details);
     }
 }

@@ -1,6 +1,6 @@
 /*
  * SteVe - SteckdosenVerwaltung - https://github.com/steve-community/steve
- * Copyright (C) 2013-2024 SteVe Community Team
+ * Copyright (C) 2013-2025 SteVe Community Team
  * All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,11 +25,10 @@ import de.rwth.idsg.steve.repository.dto.ChargePointSelect;
 import de.rwth.idsg.steve.repository.dto.ChargingProfile;
 
 import de.rwth.idsg.steve.service.ChargePointHelperService;
-import de.rwth.idsg.steve.service.ChargePointService16_Client;
+import de.rwth.idsg.steve.service.ChargePointServiceClient;
 import de.rwth.idsg.steve.utils.mapper.ChargingProfileDetailsMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import de.rwth.idsg.steve.web.api.ApiControllerAdvice.ApiErrorResponse;
 import de.rwth.idsg.steve.web.api.dto.ApiChargePointList;
@@ -37,7 +36,7 @@ import de.rwth.idsg.steve.web.api.dto.ApiChargingProfile;
 import de.rwth.idsg.steve.web.api.dto.ApiChargingProfileAssignments;
 import de.rwth.idsg.steve.web.api.dto.ApiChargingProfilesInfo;
 import de.rwth.idsg.steve.web.api.dto.ApiGetCompositSchedule;
-import de.rwth.idsg.steve.web.dto.ChargePointQueryForm;
+
 import de.rwth.idsg.steve.web.dto.ChargingProfileAssignmentQueryForm;
 import de.rwth.idsg.steve.web.dto.ChargingProfileForm;
 import de.rwth.idsg.steve.web.dto.ChargingProfileQueryForm;
@@ -79,54 +78,11 @@ public class ChargingProfileRestController {
     @Autowired private ChargingProfileRepository chargingProfileRepository;
 
     @Autowired
-    @Qualifier("ChargePointService16_Client")
-    private ChargePointService16_Client client16;
+    private ChargePointServiceClient client;
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
-
-     private String getOcppProtocol(String chargeBoxId) {
-        ChargePointQueryForm form = new ChargePointQueryForm();
-        form.setChargeBoxId(chargeBoxId);
-        return chargePointRepository.getOverview(form).get(0).getOcppProtocol().toUpperCase();
-     }
-
-     private Integer setProfile(String chargeBoxId, SetChargingProfileParams setProfileParams) {
-        String ocppProtocol = getOcppProtocol(chargeBoxId);
-        Integer taskId;
-        taskId = switch (ocppProtocol) {
-            case "OCPP1.6J", "OCPP1.6S" -> client16.setChargingProfile(setProfileParams, "SteveWebApi");
-            case "OCPP1.5J", "OCPP1.5S", "OCPP1.5" -> null;
-            case "OCPP1.2" -> null;
-            default -> null;
-        };
-        return taskId;
-    }
-
-     private Integer clearProfile(String chargeBoxId, ClearChargingProfileParams clearProfileParams) {
-        String ocppProtocol = getOcppProtocol(chargeBoxId);
-        Integer taskId;
-        taskId = switch (ocppProtocol) {
-            case "OCPP1.6J", "OCPP1.6S" -> client16.clearChargingProfile(clearProfileParams, "SteveWebApi");
-            case "OCPP1.5J", "OCPP1.5S", "OCPP1.5" -> null;
-            case "OCPP1.2" -> null;
-            default -> null;
-        };
-         return taskId;
-    }
-
-    private Integer getCompositeSchedule(String chargeBoxId, GetCompositeScheduleParams compositeScheduleParams) {
-        String ocppProtocol = getOcppProtocol(chargeBoxId);
-        Integer taskId;
-        taskId = switch (ocppProtocol) {
-            case "OCPP1.6J", "OCPP1.6S" -> client16.getCompositeSchedule(compositeScheduleParams, "SteveWebApi");
-            case "OCPP1.5J", "OCPP1.5S", "OCPP1.5" -> null;
-            case "OCPP1.2" -> null;
-            default -> null;
-        };
-         return taskId;
-    }
 
     private ApiChargePointList getChargePoints() {
         //get ChargePoints which are compatible to ChargeProfiles (ocpp v1.6)
@@ -234,7 +190,7 @@ public class ChargingProfileRestController {
         compositeScheduleParams.setDurationInSeconds(params.getDurationInSeconds());
         compositeScheduleParams.setChargingRateUnit(params.getChargingRateUnit());
 
-        return getCompositeSchedule(params.getChargeBoxId(), compositeScheduleParams);
+        return client.getCompositeSchedule(compositeScheduleParams, "SteveWebApi");
     }
 
     // -------------------------------------------------------------------------
@@ -267,7 +223,7 @@ public class ChargingProfileRestController {
         setProfileParams.setChargePointSelectList(chargePointRepository.getChargePointSelect(params.getChargeBoxId()));
         setProfileParams.setConnectorId(params.getConnectorId());
         setProfileParams.setChargingProfilePk(params.getProfilePk());
-        return setProfile(params.getChargeBoxId(), setProfileParams);
+        return client.setChargingProfile(setProfileParams, "SteveWebApi");
     }
 
     @ApiResponses(value = {
@@ -294,7 +250,7 @@ public class ChargingProfileRestController {
             clearProfileParams.setChargingProfilePurpose(params.getChargingProfilePurpose());
             clearProfileParams.setStackLevel(params.getStackLevel());
         }
-        return clearProfile(params.getChargeBoxId(), clearProfileParams);
+        return client.clearChargingProfile(clearProfileParams, "SteveWebApi");
     }
 
     // -------------------------------------------------------------------------

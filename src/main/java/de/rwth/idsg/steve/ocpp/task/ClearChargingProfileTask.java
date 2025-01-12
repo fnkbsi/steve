@@ -37,17 +37,17 @@ public class ClearChargingProfileTask extends Ocpp16AndAboveTask<ClearChargingPr
 
     private final ChargingProfileRepository chargingProfileRepository;
 
+    
     public ClearChargingProfileTask(ClearChargingProfileParams params,
                                     ChargingProfileRepository chargingProfileRepository) {
         super(params);
         this.chargingProfileRepository = chargingProfileRepository;
     }
 
-    public ClearChargingProfileTask(OcppVersion ocppVersion,
-                                    ClearChargingProfileParams params,
+    public ClearChargingProfileTask(ClearChargingProfileParams params,
                                     ChargingProfileRepository chargingProfileRepository,
                                     String caller) {
-        super(ocppVersion, params, caller);
+        super(params, caller);
         this.chargingProfileRepository = chargingProfileRepository;
     }
 

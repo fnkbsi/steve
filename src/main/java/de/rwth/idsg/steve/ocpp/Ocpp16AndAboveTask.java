@@ -34,8 +34,8 @@ public abstract class Ocpp16AndAboveTask<S extends ChargePointSelection, RESPONS
         super(params);
     }
 
-    public Ocpp16AndAboveTask(OcppVersion ocppVersion, S params, String caller) {
-        super(ocppVersion, params, caller);
+    public Ocpp16AndAboveTask(S params, String caller) {
+        super(params, caller);
     }
 
     @Deprecated
