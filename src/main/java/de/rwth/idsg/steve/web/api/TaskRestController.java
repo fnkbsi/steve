@@ -1,6 +1,6 @@
 /*
  * SteVe - SteckdosenVerwaltung - https://github.com/steve-community/steve
- * Copyright (C) 2013-2024 SteVe Community Team
+ * Copyright (C) 2013-2025 SteVe Community Team
  * All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -119,7 +119,7 @@ public class TaskRestController {
     )
     @GetMapping(value = "task")
     @ResponseBody
-    public ApiTaskInfo getTaskDetails(@RequestParam(name="id") @Valid Integer taskId) {
+    public ApiTaskInfo getTaskDetails(@RequestParam(name = "id") @Valid Integer taskId) {
         ApiTaskInfo taskInfo = new ApiTaskInfo(taskId, taskStore.get(taskId));
         return taskInfo;
     }
