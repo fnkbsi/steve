@@ -109,7 +109,7 @@ public class ChargePointRepositoryImpl implements ChargePointRepository {
                 .from(CHARGE_BOX)
                 .where(CHARGE_BOX.CHARGE_BOX_ID.eq(chageBoxID))
                 .fetch()
-                .map(r -> new ChargePointSelect(OcppProtocol.fromCompositeValue(r.value3()).getTransport(),
+                .map(r -> new ChargePointSelect(OcppProtocol.fromCompositeValue(r.value3()),
                         r.value1(), r.value2()));
     }
 

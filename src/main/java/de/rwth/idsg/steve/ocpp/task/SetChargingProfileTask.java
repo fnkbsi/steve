@@ -55,11 +55,10 @@ public class SetChargingProfileTask extends Ocpp16AndAboveTask<EnhancedSetChargi
     }
 
 
-    public SetChargingProfileTask(OcppVersion ocppVersion,
-                                  EnhancedSetChargingProfileParams params,
+    public SetChargingProfileTask(EnhancedSetChargingProfileParams params,
                                   ChargingProfileRepository chargingProfileRepository,
                                   String caller) {
-        super(ocppVersion, params, caller);
+        super(params, caller);
         this.chargingProfileRepository = chargingProfileRepository;
     }
 

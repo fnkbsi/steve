@@ -1,6 +1,6 @@
 /*
  * SteVe - SteckdosenVerwaltung - https://github.com/steve-community/steve
- * Copyright (C) 2013-2024 SteVe Community Team
+ * Copyright (C) 2013-2025 SteVe Community Team
  * All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 package de.rwth.idsg.steve.web.api.dto;
 
 import de.rwth.idsg.steve.ocpp.CommunicationTask;
-import de.rwth.idsg.steve.ocpp.OcppVersion;
+
 import de.rwth.idsg.steve.ocpp.RequestResult;
 import de.rwth.idsg.steve.ocpp.TaskOrigin;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -40,8 +40,7 @@ import org.joda.time.DateTime;
 public class ApiTaskInfo {
     @Schema(description = "Task ID")
     private Integer taskId;
-    @Schema(description = "OCPP version")
-    private OcppVersion ocppVersion;
+
     @Schema(description = "OCPP operation")
     private String operationName;
     @Schema(description = "external / internal")
@@ -67,7 +66,6 @@ public class ApiTaskInfo {
 
     public ApiTaskInfo(Integer taskId, CommunicationTask r) {
         this.taskId = taskId;
-        this.ocppVersion = r.getOcppVersion();
         this.operationName = r.getOperationName();
         this.origin = r.getOrigin();
         this.caller = r.getCaller();
