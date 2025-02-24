@@ -45,7 +45,7 @@ public class SetChargingProfileTaskFromDB extends SetChargingProfileTask {
     private final int connectorId;
     private final ChargingProfile.Details details;
     private final ChargingProfileRepository chargingProfileRepository;
-    private final int transactionId;
+    private final Integer transactionId;
 
     public SetChargingProfileTaskFromDB(SetChargingProfileParams params,
                                         ChargingProfile.Details details,
@@ -93,7 +93,7 @@ public class SetChargingProfileTaskFromDB extends SetChargingProfileTask {
         if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(profile.getStartSchedule())){
             profile.setStartSchedule(DateTime.now());
         }
-        
+                
         List<ChargingSchedulePeriod> schedulePeriods =
             details.getPeriods()
                        .stream()
