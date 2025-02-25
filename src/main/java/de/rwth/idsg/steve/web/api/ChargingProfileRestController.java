@@ -219,10 +219,17 @@ public class ChargingProfileRestController {
     @PostMapping(value = "setchargingprofile")
     @ResponseBody
     public Integer postSetChargingProfile(@RequestBody @Valid ApiChargingProfile params) {
+
+        // set charging profile supports only set by Profile ID
+        if (!params.getFilterType().equals(ClearChargingProfileFilterType.ChargingProfileId)) {
+            return -1;
+        }
+
         SetChargingProfileParams setProfileParams = new SetChargingProfileParams();
         setProfileParams.setChargePointSelectList(chargePointRepository.getChargePointSelect(params.getChargeBoxId()));
         setProfileParams.setConnectorId(params.getConnectorId());
         setProfileParams.setChargingProfilePk(params.getProfilePk());
+
         return client.setChargingProfile(setProfileParams, "SteveWebApi");
     }
 
