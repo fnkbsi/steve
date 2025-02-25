@@ -44,6 +44,7 @@ import de.rwth.idsg.steve.ocpp.task.UpdateFirmwareTask;
 import de.rwth.idsg.steve.repository.ChargingProfileRepository;
 import de.rwth.idsg.steve.repository.ReservationRepository;
 import de.rwth.idsg.steve.repository.TaskStore;
+import de.rwth.idsg.steve.repository.TransactionRepository;
 import de.rwth.idsg.steve.repository.dto.ChargePointSelect;
 import de.rwth.idsg.steve.repository.dto.ChargingProfile;
 import de.rwth.idsg.steve.repository.dto.InsertReservationParams;
@@ -74,6 +75,7 @@ import org.joda.time.DateTime;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import static java.util.Objects.isNull;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -87,6 +89,7 @@ public class ChargePointServiceClient {
     private final ChargingProfileRepository chargingProfileRepository;
     private final ReservationRepository reservationRepository;
     private final OcppTagService ocppTagService;
+    private final TransactionRepository transactionRepository;
 
     private final DelegatingTaskExecutor asyncTaskExecutor;
     private final TaskStore taskStore;
@@ -405,11 +408,25 @@ public class ChargePointServiceClient {
 
         return setChargingProfile(task, callbacks);
     }
-    
+
     @SafeVarargs
     public final int setChargingProfile(SetChargingProfileParams params, String caller,
                                         OcppCallback<String>... callbacks) {
         ChargingProfile.Details details = chargingProfileRepository.getDetails(params.getChargingProfilePk());
+
+        // if it's a TxProfile which misses the StartSchedule, then add the actual time as StartSchedule
+        ChargingProfilePurposeType purpose = ChargingProfilePurposeType
+                .fromValue(details.getProfile().getChargingProfilePurpose());
+        if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(details.getProfile().getStartSchedule())){
+            details.getProfile().setStartSchedule(DateTime.now());
+        }
+        // OCPP 1.6 Spec page 54: To prevent mismatch between transactions and a TxProfile, The Central System SHALL
+        // include the transactionId in a SetChargingProfile.req if the profile applies to a specific transaction.
+        if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(params.getTransactionId())) {
+            String chagerBox = params.getChargePointSelectList().getFirst().getChargeBoxId();
+            Integer transId = transactionRepository.getActiveTransactionId(chagerBox, params.getConnectorId());
+            params.setTransactionId(transId);
+        }
 
         SetChargingProfileTaskFromDB task = new SetChargingProfileTaskFromDB(params, details, chargingProfileRepository);
 

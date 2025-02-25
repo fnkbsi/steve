@@ -33,8 +33,6 @@ import ocpp.cp._2015._10.SetChargingProfileRequest;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
-import static java.util.Objects.isNull;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -56,7 +54,7 @@ public class SetChargingProfileTaskFromDB extends SetChargingProfileTask {
         this.chargingProfileRepository = chargingProfileRepository;
         this.transactionId = params.getTransactionId();
     }
-    
+
     public SetChargingProfileTaskFromDB(SetChargingProfileParams params, String caller,
                                         ChargingProfile.Details details,
                                         ChargingProfileRepository chargingProfileRepository) {
@@ -74,7 +72,7 @@ public class SetChargingProfileTaskFromDB extends SetChargingProfileTask {
             public void success(String chargeBoxId, String statusValue) {
                 addNewResponse(chargeBoxId, statusValue);
 
-                // if the ChargeBox accepted the Profile notice this in the DB, except it's a TxProfile 
+                // if the ChargeBox accepted the Profile notice this in the DB, except it's a TxProfile
                 Boolean isTxProfile =  details.getProfile().getChargingProfilePurpose().contains("TxProfile");
                 if ("Accepted".equalsIgnoreCase(statusValue) && !isTxProfile) {
                     int chargingProfilePk = details.getProfile().getChargingProfilePk();
@@ -88,12 +86,6 @@ public class SetChargingProfileTaskFromDB extends SetChargingProfileTask {
     public SetChargingProfileRequest getOcpp16Request() {
         ChargingProfileRecord profile = details.getProfile();
 
-        // if it's a TxProfile which misses the StartSchedule, then add the actual time as StartSchedule
-        ChargingProfilePurposeType purpose = ChargingProfilePurposeType.fromValue(profile.getChargingProfilePurpose());
-        if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(profile.getStartSchedule())){
-            profile.setStartSchedule(DateTime.now());
-        }
-                
         List<ChargingSchedulePeriod> schedulePeriods =
             details.getPeriods()
                        .stream()
