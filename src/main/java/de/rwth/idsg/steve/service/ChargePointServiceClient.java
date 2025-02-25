@@ -423,7 +423,8 @@ public class ChargePointServiceClient {
         // OCPP 1.6 Spec page 54: To prevent mismatch between transactions and a TxProfile, The Central System SHALL
         // include the transactionId in a SetChargingProfile.req if the profile applies to a specific transaction.
         if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(params.getTransactionId())) {
-            String chagerBox = params.getChargePointSelectList().getFirst().getChargeBoxId();
+            // ChargePointSelectList should have length one if the Profile is TxProfiel, also the connector should be >0 
+            String chagerBox = params.getChargePointSelectList().get(0).getChargeBoxId();
             Integer transId = transactionRepository.getActiveTransactionId(chagerBox, params.getConnectorId());
             params.setTransactionId(transId);
         }
