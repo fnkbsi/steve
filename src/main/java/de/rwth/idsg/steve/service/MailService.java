@@ -37,10 +37,6 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 
 import java.util.Properties;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static de.rwth.idsg.steve.utils.StringUtils.splitByComma;
 import static de.rwth.idsg.steve.utils.StringUtils.isValidAddress;
 import java.util.List;
@@ -89,18 +85,18 @@ public class MailService {
     }
 
     private void send(String subject, String body, String recipientAddresses) throws MessagingException {
-        MailSettings settingsLocal = getSettings();
-		Session session = createSession(getSettings());
-		
+        MailSettings settings = getSettings();
+        Session session = createSession(settings);
+
         Message mail = new MimeMessage(session);
         mail.setSubject("[SteVe] " + subject);
         mail.setContent(body, "text/plain");
-        mail.setFrom(new InternetAddress(settingsLocal.getFrom()));
+        mail.setFrom(new InternetAddress(settings.getFrom()));
 
         List<String> eMailAddresses;
 
         if (recipientAddresses.isEmpty()) {
-            eMailAddresses = settingsLocal.getRecipients();
+            eMailAddresses = settings.getRecipients();
         } else {
             eMailAddresses = splitByComma(recipientAddresses);
         }
