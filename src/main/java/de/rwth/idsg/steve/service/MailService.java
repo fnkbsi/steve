@@ -20,6 +20,7 @@ package de.rwth.idsg.steve.service;
 
 import com.google.common.base.Strings;
 import de.rwth.idsg.steve.SteveException;
+import de.rwth.idsg.steve.config.DelegatingTaskExecutor;
 import de.rwth.idsg.steve.repository.SettingsRepository;
 import de.rwth.idsg.steve.repository.dto.MailSettings;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,7 @@ import java.util.List;
 public class MailService {
 
     @Autowired private SettingsRepository settingsRepository;
-    @Autowired private ScheduledExecutorService executorService;
+    @Autowired private DelegatingTaskExecutor asyncTaskExecutor;
 
     public MailSettings getSettings() {
         return settingsRepository.getMailSettings();
@@ -68,7 +69,7 @@ public class MailService {
     }
 
     public void sendAsync(String subject, String body) {
-        executorService.execute(() -> {
+        asyncTaskExecutor.execute(() -> {
             try {
                 send(subject, body, "");
             } catch (MessagingException e) {
@@ -78,7 +79,7 @@ public class MailService {
     }
 
     public void sendAsync(String subject, String body, String recipientAddresses) {
-        executorService.execute(() -> {
+        asyncTaskExecutor.execute(() -> {
             try {
                 send(subject, body, recipientAddresses);
             } catch (MessagingException e) {

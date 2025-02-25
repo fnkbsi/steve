@@ -371,6 +371,9 @@ private SelectQuery<Record8<DateTime, String, String, String, String, String, St
 
         if (form.getType() == TransactionQueryForm.QueryType.ACTIVE) {
             selectQuery.addConditions(TRANSACTION.STOP_TIMESTAMP.isNull());
+
+        } else if (form.getType() == TransactionQueryForm.QueryType.STOPPED) {
+            selectQuery.addConditions(TRANSACTION.STOP_TIMESTAMP.isNotNull());
         }
 
         processType(selectQuery, form);
