@@ -241,11 +241,53 @@ public class ChargePointServiceClient {
 
         return taskStore.add(task);
     }
+    
+    @SafeVarargs
+    public final int remoteStartTransaction(RemoteStartTransactionParams params, String caller,
+                                            OcppCallback<String>... callbacks) {
+        ocpp.cp._2015._10.ChargingProfile chargingProfile = null;
+        Integer chargingProfilePk = params.getChargingProfilePk();
+        if (chargingProfilePk != null) {
+            ChargingProfile.Details details = chargingProfileRepository.getDetails(chargingProfilePk);
+            chargingProfile = ChargingProfileDetailsMapper.mapToOcpp(details, null);
+            if (chargingProfile.getChargingProfilePurpose() != ChargingProfilePurposeType.TX_PROFILE) {
+                throw new SteveException("ChargingProfilePurposeType is not TX_PROFILE");
+            }
+        }
 
+        RemoteStartTransactionTask task = new RemoteStartTransactionTask(params, caller, chargingProfile);
+
+        for (var callback : callbacks) {
+            task.addCallback(callback);
+        }
+
+        BackgroundService.with(taskExecutor)
+            .forFirst(task.getParams().getChargePointSelectList())
+            .execute(c -> invoker.remoteStartTransaction(c, task));
+
+        return taskStore.add(task);
+    }
+    
     @SafeVarargs
     public final int remoteStopTransaction(RemoteStopTransactionParams params,
                                            OcppCallback<String>... callbacks) {
         RemoteStopTransactionTask task = new RemoteStopTransactionTask(params);
+
+        for (var callback : callbacks) {
+            task.addCallback(callback);
+        }
+
+        BackgroundService.with(taskExecutor)
+            .forFirst(task.getParams().getChargePointSelectList())
+            .execute(c -> invoker.remoteStopTransaction(c, task));
+
+        return taskStore.add(task);
+    }
+    
+    @SafeVarargs
+    public final int remoteStopTransaction(RemoteStopTransactionParams params, String caller,
+                                           OcppCallback<String>... callbacks) {
+        RemoteStopTransactionTask task = new RemoteStopTransactionTask(params, caller);
 
         for (var callback : callbacks) {
             task.addCallback(callback);
@@ -262,6 +304,22 @@ public class ChargePointServiceClient {
     public final int unlockConnector(UnlockConnectorParams params,
                                      OcppCallback<String>... callbacks) {
         UnlockConnectorTask task = new UnlockConnectorTask(params);
+
+        for (var callback : callbacks) {
+            task.addCallback(callback);
+        }
+
+        BackgroundService.with(taskExecutor)
+            .forFirst(task.getParams().getChargePointSelectList())
+            .execute(c -> invoker.unlockConnector(c, task));
+
+        return taskStore.add(task);
+    }
+    
+    @SafeVarargs
+    public final int unlockConnector(UnlockConnectorParams params, String caller,
+                                     OcppCallback<String>... callbacks) {
+        UnlockConnectorTask task = new UnlockConnectorTask(params, caller);
 
         for (var callback : callbacks) {
             task.addCallback(callback);

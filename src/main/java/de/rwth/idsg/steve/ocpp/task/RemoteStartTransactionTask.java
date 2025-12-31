@@ -37,6 +37,11 @@ public class RemoteStartTransactionTask extends CommunicationTask<RemoteStartTra
         super(params);
         this.chargingProfile = chargingProfile;
     }
+    
+    public RemoteStartTransactionTask(RemoteStartTransactionParams params, String caller, ocpp.cp._2015._10.ChargingProfile chargingProfile) {
+        super(params, caller);
+        this.chargingProfile = chargingProfile;
+    }
 
     @Override
     public OcppCallback<String> defaultCallback() {

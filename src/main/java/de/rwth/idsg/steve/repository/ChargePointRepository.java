@@ -42,6 +42,8 @@ public interface ChargePointRepository {
 
     List<ChargePointSelect> getChargePointSelect(OcppProtocol protocol, List<String> inStatusFilter, List<String> chargeBoxIdFilter);
 
+    List<ChargePointSelect> getChargePointSelect(String chageBoxID);
+
     List<String> getChargeBoxIds();
     Map<String, Integer> getChargeBoxIdPkPair(List<String> chargeBoxIdList);
 

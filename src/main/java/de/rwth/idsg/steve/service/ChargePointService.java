@@ -325,6 +325,10 @@ public class ChargePointService {
         return getChargePoints(version, Collections.singletonList(RegistrationStatus.ACCEPTED), chargeBoxIdFilter);
     }
 
+    public List<ChargePointSelect> getChargePointSelect(String chargeBoxId) {
+        return chargePointRepository.getChargePointSelect(chargeBoxId);
+    }
+    
     public List<ChargePointSelect> getChargePoints(OcppProtocol protocol,
                                                    List<RegistrationStatus> inStatusFilter,
                                                    List<String> chargeBoxIdFilter) {
