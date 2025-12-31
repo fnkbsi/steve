@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -31,6 +32,7 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 /**
@@ -69,6 +71,36 @@ public class SecurityConfiguration {
                         WebSocketConfiguration.PATH_INFIX + "**",
                         "/WEB-INF/views/**" // https://github.com/spring-projects/spring-security/issues/13285#issuecomment-1579097065
                     ).permitAll()
+                    // Set access rules for admin and users, to be adapt 
+//                    .requestMatchers(prefix).hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(prefix + "/home").hasAnyAuthority("USER", "ADMIN")
+//                    // webuser
+//                        //only allowed to change the own password
+//                    .requestMatchers(prefix + "/webusers" + "/password/{name}")
+//                        .access(new WebExpressionAuthorizationManager("#name == authentication.name"))
+//                    .requestMatchers(prefix + "/webusers" + "/apipassword/{name}")
+//                        .access(new WebExpressionAuthorizationManager("#name == authentication.name"))
+//                        // otherwise denies access on backToOverview!
+//                    //.requestMatchers(toOverview).hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(HttpMethod.GET, prefix + "/webusers/**").hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(HttpMethod.POST, prefix + "/webusers/**").hasAuthority("ADMIN")
+//                    // users
+//                    .requestMatchers(prefix + "/users").hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(prefix + "/users" + "/details/**").hasAnyAuthority("USER", "ADMIN")
+//                     //ocppTags
+//                    .requestMatchers(prefix + "/ocppTags").hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(prefix + "/ocppTags" + "/details/**").hasAnyAuthority("USER", "ADMIN")
+//                     // chargepoints
+//                    .requestMatchers(prefix + "/chargepoints").hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(prefix + "/chargepoints" + "/details/**").hasAnyAuthority("USER", "ADMIN")
+//                     // transactions and reservations
+//                    .requestMatchers(prefix + "/transactions").hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(prefix + "/transactions" + "/details/**").hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(prefix + "/reservations").hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(prefix + "/reservations" + "/**").hasAnyAuthority("ADMIN")
+//                     // singout and noAccess
+//                    .requestMatchers(prefix + "/signout/" + "**").hasAnyAuthority("USER", "ADMIN")
+//                    .requestMatchers(prefix + "/noAccess/" + "**").hasAnyAuthority("USER", "ADMIN")
                     .requestMatchers(prefix + "/**").hasAuthority("ADMIN")
             )
             // SOAP stations are making POST calls for communication. even though the following path is permitted for
@@ -78,6 +110,7 @@ public class SecurityConfiguration {
             .sessionManagement(req -> req.invalidSessionUrl(prefix + "/signin"))
             .formLogin(req -> req.loginPage(prefix + "/signin").permitAll())
             .logout(req -> req.logoutUrl(prefix + "/signout"))
+            .exceptionHandling(req -> req.accessDeniedPage(prefix + "/noAccess"))
             .build();
     }
 
