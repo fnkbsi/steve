@@ -35,12 +35,9 @@ import de.rwth.idsg.steve.web.dto.ocpp.RemoteStopTransactionParams;
 
 import de.rwth.idsg.steve.web.dto.ocpp.UnlockConnectorParams;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import de.rwth.idsg.steve.web.api.ApiControllerAdvice.ApiErrorResponse;
 import de.rwth.idsg.steve.web.api.dto.ApiChargePointList;
 import de.rwth.idsg.steve.web.api.dto.ApiChargePointStart;
-//import de.rwth.idsg.steve.web.api.exception.BadRequestException;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
