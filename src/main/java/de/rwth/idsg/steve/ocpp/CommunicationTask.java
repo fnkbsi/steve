@@ -79,6 +79,11 @@ public abstract class CommunicationTask<S extends ChargePointSelection, RESPONSE
         this(params, TaskOrigin.INTERNAL, "SteVe", customDetails);
     }
 
+    public CommunicationTask(S params, String caller) {
+        this(params, TaskOrigin.EXTERNAL, caller, Collections.emptyMap());
+    }
+
+
     /**
      * Do not expose the constructor, make it package-private
      */

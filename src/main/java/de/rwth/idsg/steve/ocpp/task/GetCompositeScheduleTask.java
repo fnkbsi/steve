@@ -38,6 +38,11 @@ public class GetCompositeScheduleTask extends Ocpp16AndAboveTask<GetCompositeSch
         super(params);
     }
 
+    public GetCompositeScheduleTask(GetCompositeScheduleParams params,
+                                    String caller) {
+        super(params, caller);
+    }
+
     @Override
     public OcppCallback<GetCompositeScheduleResponse> defaultCallback() {
         return new DefaultOcppCallback<GetCompositeScheduleResponse>() {

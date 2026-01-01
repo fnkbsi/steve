@@ -36,6 +36,10 @@ public abstract class SetChargingProfileTask extends Ocpp16AndAboveTask<Multiple
     public SetChargingProfileTask(MultipleChargePointSelect params) {
         super(params);
     }
+    
+    public SetChargingProfileTask(MultipleChargePointSelect params, String caller) {
+        super(params, caller);
+    }
 
     public abstract SetChargingProfileRequest getOcpp16Request();
 

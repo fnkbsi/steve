@@ -35,6 +35,10 @@ public abstract class Ocpp15AndAboveTask<S extends ChargePointSelection, RESPONS
         super(params);
     }
 
+    public Ocpp15AndAboveTask(S params, String caller) {
+        super(params, caller);
+    }
+
     public Ocpp15AndAboveTask(S params, Map<String, String> customDetails) {
         super(params, customDetails);
     }

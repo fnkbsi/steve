@@ -91,6 +91,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import static java.util.Objects.isNull;
 
 /**
  * @author Sevket Goekay <sevketgokay@gmail.com>
@@ -105,6 +106,7 @@ public class ChargePointServiceClient {
     private final ReservationRepository reservationRepository;
     private final OcppTagService ocppTagService;
     private final ChargePointService chargePointService;
+    private final TransactionService transactionService;
     private final CertificateRepository certificateRepository;
     private final EventRepository eventRepository;
 
@@ -436,9 +438,52 @@ public class ChargePointServiceClient {
     }
 
     @SafeVarargs
+    public final int setChargingProfile(SetChargingProfileParams params, String caller,
+                                        OcppCallback<String>... callbacks) {
+        ChargingProfile.Details details = chargingProfileRepository.getDetails(params.getChargingProfilePk());
+
+        // if it's a TxProfile which misses the StartSchedule, then add the actual time as StartSchedule
+        ChargingProfilePurposeType purpose = ChargingProfilePurposeType
+                .fromValue(details.getProfile().getChargingProfilePurpose());
+        if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(details.getProfile().getStartSchedule())){
+            details.getProfile().setStartSchedule(DateTime.now());
+        }
+        // OCPP 1.6 Spec page 54: To prevent mismatch between transactions and a TxProfile, The Central System SHALL
+        // include the transactionId in a SetChargingProfile.req if the profile applies to a specific transaction.
+        if (ChargingProfilePurposeType.TX_PROFILE == purpose && isNull(params.getTransactionId())) {
+            // ChargePointSelectList should have length one if the Profile is TxProfiel, also the connector should be >0
+            String chagerBox = params.getChargePointSelectList().get(0).getChargeBoxId();
+            //Integer transId = transactionRepository.getActiveTransactionId(chagerBox, params.getConnectorId());
+            Integer transId = transactionService.getLatestActiveTransaction(chagerBox, params.getConnectorId()).getId();
+            params.setTransactionId(transId);
+        }
+
+        SetChargingProfileTaskFromDB task = new SetChargingProfileTaskFromDB(params, details, chargingProfileRepository);
+
+        return setChargingProfile(task, callbacks);
+    }
+
+    @SafeVarargs
     public final int clearChargingProfile(ClearChargingProfileParams params,
                                           OcppCallback<String>... callbacks) {
         ClearChargingProfileTask task = new ClearChargingProfileTask(params, chargingProfileRepository);
+
+        for (var callback : callbacks) {
+            task.addCallback(callback);
+        }
+
+        BackgroundService.with(taskExecutor)
+            .forEach(task.getParams().getChargePointSelectList())
+            .execute(c -> invoker.clearChargingProfile(c, task));
+
+        return taskStore.add(task);
+    }
+
+    // clear charging profile with caller
+    @SafeVarargs
+    public final int clearChargingProfile(ClearChargingProfileParams params, String caller,
+                                          OcppCallback<String>... callbacks) {
+        ClearChargingProfileTask task = new ClearChargingProfileTask(params, chargingProfileRepository, caller);
 
         for (var callback : callbacks) {
             task.addCallback(callback);
@@ -455,6 +500,23 @@ public class ChargePointServiceClient {
     public final int getCompositeSchedule(GetCompositeScheduleParams params,
                                           OcppCallback<GetCompositeScheduleResponse>... callbacks) {
         GetCompositeScheduleTask task = new GetCompositeScheduleTask(params);
+
+        for (var callback : callbacks) {
+            task.addCallback(callback);
+        }
+
+        BackgroundService.with(taskExecutor)
+            .forEach(task.getParams().getChargePointSelectList())
+            .execute(c -> invoker.getCompositeSchedule(c, task));
+
+        return taskStore.add(task);
+    }
+
+    // get CompositeSchedule with caller
+    @SafeVarargs
+    public final int getCompositeSchedule(GetCompositeScheduleParams params, String caller,
+                                          OcppCallback<GetCompositeScheduleResponse>... callbacks) {
+        GetCompositeScheduleTask task = new GetCompositeScheduleTask(params, caller);
 
         for (var callback : callbacks) {
             task.addCallback(callback);
