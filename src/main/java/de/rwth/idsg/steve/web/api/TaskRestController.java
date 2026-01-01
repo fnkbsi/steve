@@ -1,6 +1,6 @@
 /*
  * SteVe - SteckdosenVerwaltung - https://github.com/steve-community/steve
- * Copyright (C) 2013-2025 SteVe Community Team
+ * Copyright (C) 2013-2026 SteVe Community Team
  * All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 package de.rwth.idsg.steve.web.api;
 
 import de.rwth.idsg.steve.repository.TaskStore;
